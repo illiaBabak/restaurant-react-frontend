@@ -1,0 +1,1 @@
+export const WAITERS_GET_QUERY = "WAITERS_GET_QUERY";
