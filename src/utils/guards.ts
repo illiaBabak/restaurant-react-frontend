@@ -1,4 +1,4 @@
-import { Waiter, Response } from "src/types";
+import { Waiter, Response, Dish } from "src/types";
 
 export const isString = (value: unknown): value is string =>
   typeof value === "string";
@@ -36,3 +36,24 @@ export const isWaitersResponse = (
   value: unknown
 ): value is Response<Waiter[]> =>
   isObject(value) && "data" in value && isWaiters(value.data);
+
+export const isDish = (value: unknown): value is Dish =>
+  isObject(value) &&
+  "_id" in value &&
+  isObject(value._id) &&
+  "$oid" in value._id &&
+  isString(value._id.$oid) &&
+  "name" in value &&
+  isString(value.name) &&
+  "weight" in value &&
+  isNumber(value.weight) &&
+  "category" in value &&
+  isString(value.category) &&
+  "price" in value &&
+  isNumber(value.price);
+
+export const isDishes = (value: unknown): value is Dish[] =>
+  Array.isArray(value) && value.every(isDish);
+
+export const isDishesResponse = (value: unknown): value is Response<Dish[]> =>
+  isObject(value) && "data" in value && isDishes(value.data);

@@ -2,9 +2,10 @@ import { JSX } from "react";
 import { Header } from "src/components/Header";
 import { SideBar } from "src/components/SideBar";
 import { useGetWaiters } from "src/api/waiters";
+import { useGetDishes } from "src/api/dishes";
 import { Loader } from "src/components/Loader";
 import { Table } from "src/components/Table";
-import { Waiter } from "src/types";
+import { Dish, Waiter } from "src/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
 
@@ -31,14 +32,36 @@ const waitersColumns: ColumnDef<Waiter>[] = [
   },
 ];
 
+const dishesColumns: ColumnDef<Dish>[] = [
+  {
+    header: "Name",
+    accessorKey: "name",
+  },
+  {
+    header: "Price",
+    accessorKey: "price",
+  },
+  {
+    header: "Weight",
+    accessorKey: "weight",
+  },
+  {
+    header: "Category",
+    accessorKey: "category",
+  },
+];
+
 export const Admin = (): JSX.Element => {
   const { data: waiters, isLoading: isLoadingWaiters } = useGetWaiters();
+  const { data: dishes, isLoading: isLoadingDishes } = useGetDishes();
 
   const [searchParams] = useSearchParams();
 
   const selectedTable = searchParams.get("table") ?? "Waiters";
 
   const isWaitersTable = selectedTable === "Waiters";
+
+  const isDishesTable = selectedTable === "Dishes";
 
   return (
     <div className="flex flex-col h-screen">
@@ -53,9 +76,13 @@ export const Admin = (): JSX.Element => {
           {isWaitersTable && waiters && (
             <Table data={waiters} columns={waitersColumns} />
           )}
+
+          {isDishesTable && dishes && (
+            <Table data={dishes} columns={dishesColumns} />
+          )}
         </div>
       </div>
-      {isLoadingWaiters && <Loader />}
+      {isLoadingWaiters || (isLoadingDishes && <Loader />)}
     </div>
   );
 };

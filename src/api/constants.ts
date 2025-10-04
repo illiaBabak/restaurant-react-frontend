@@ -1,1 +1,3 @@
 export const WAITERS_GET_QUERY = "WAITERS_GET_QUERY";
+
+export const DISHES_GET_QUERY = "DISHES_GET_QUERY";
