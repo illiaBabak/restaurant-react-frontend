@@ -23,13 +23,11 @@ export const NotFound = (): JSX.Element => {
   return (
     <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        {/* 404 Number */}
         <div className="mb-8">
           <h1 className="text-9xl font-bold text-violet-500 mb-4">404</h1>
           <div className="w-24 h-1 bg-violet-400 mx-auto rounded-full"></div>
         </div>
 
-        {/* Error Message */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-4 tracking-wide">
             Page Not Found
@@ -40,7 +38,6 @@ export const NotFound = (): JSX.Element => {
           </p>
         </div>
 
-        {/* Countdown */}
         <div className="mb-8 p-4 bg-white rounded-xl shadow-md border-2 border-violet-100">
           <p className="text-gray-700 mb-2">Redirecting to Dashboard in</p>
           <div className="text-4xl font-bold text-violet-500 mb-2">
@@ -54,7 +51,6 @@ export const NotFound = (): JSX.Element => {
           </div>
         </div>
 
-        {/* Action Button */}
         <button
           onClick={() => navigate(ROUTES.admin)}
           className="bg-violet-500 text-white px-8 py-3 rounded-md cursor-pointer transition-all duration-300 hover:bg-violet-600 hover:shadow-lg transform hover:-translate-y-1 font-medium tracking-wide text-lg"
@@ -62,7 +58,6 @@ export const NotFound = (): JSX.Element => {
           Go to Dashboard Now
         </button>
 
-        {/* Decorative Elements */}
         <div className="mt-12 flex justify-center space-x-2">
           <div className="w-3 h-3 bg-violet-300 rounded-full animate-pulse"></div>
           <div

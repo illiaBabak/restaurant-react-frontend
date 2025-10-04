@@ -5,4 +5,4 @@ export const ROUTES = {
   receipt: "/receipt",
 };
 
-export const TABLES_TYPES = ["Waiters", "Dishes"];
+export const TABLES_CATEGORIES = ["Waiters", "Dishes"];

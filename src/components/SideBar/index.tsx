@@ -1,25 +1,25 @@
 import { JSX } from "react";
 import { useSearchParams } from "react-router";
-import { TABLES_TYPES } from "src/utils/constants";
+import { TABLES_CATEGORIES } from "src/utils/constants";
 
 export const SideBar = (): JSX.Element => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const selectedTable = searchParams.get("table") ?? TABLES_TYPES[0];
+  const selectedCategory = searchParams.get("table-category") ?? "Waiters";
 
   return (
     <div className="flex flex-col p-4 gap-5 shadow-md w-[320px] h-full">
       <h2 className="text-2xl font-bold tracking-wide">Tables</h2>
       <div className="flex flex-col gap-2">
-        {TABLES_TYPES.map((table, index) => (
+        {TABLES_CATEGORIES.map((category, index) => (
           <h3
-            onClick={() => setSearchParams({ table: table })}
-            key={`${table}-${index}`}
-            className={`text-base tracking-wide cursor-pointer border-2 border-transparent px-3 py-2 ${
-              selectedTable === table ? "border-violet-400 rounded-xl" : ""
+            onClick={() => setSearchParams({ "table-category": category })}
+            key={`${category}-${index}`}
+            className={`text-base tracking-wide cursor-pointer border-2 border-transparent px-3 py-2 rounded-xl transition-all duration-300 ease-in-out hover:border-violet-300 hover:shadow-sm ${
+              selectedCategory === category ? "border-violet-400 shadow-md" : ""
             }`}
           >
-            {table}
+            {category}
           </h3>
         ))}
       </div>

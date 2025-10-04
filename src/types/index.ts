@@ -9,11 +9,6 @@ export type Waiter = {
   address: string;
 };
 
-export type Response<T> = {
-  data: T;
-  error: null;
-};
-
 export type Dish = {
   _id: {
     $oid: string;
@@ -22,4 +17,9 @@ export type Dish = {
   price: number;
   weight: number;
   category: string;
+};
+
+export type Response<T> = {
+  data: T;
+  error: null;
 };
