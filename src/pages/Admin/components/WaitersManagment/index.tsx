@@ -4,7 +4,6 @@ import { Waiter } from "src/types";
 import { useAddWaiter, useGetWaiters } from "src/api/waiters";
 import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
-import { Loader } from "src/components/Loader";
 import { OverlayModal } from "src/components/OverlayModal";
 import { v4 as uuidv4 } from "uuid";
 import { isValidEmail } from "src/utils/isValidEmail";
@@ -95,9 +94,13 @@ export const WaitersManagment = (): JSX.Element => {
         </button>
       </div>
 
-      {waiters && <Table data={waiters} columns={waitersColumns} />}
-
-      {isLoadingWaiters && <Loader />}
+      {
+        <Table
+          data={waiters ?? []}
+          columns={waitersColumns}
+          isLoading={isLoadingWaiters}
+        />
+      }
 
       {shouldShowModal && (
         <OverlayModal onClose={() => setShouldShowModal(false)}>

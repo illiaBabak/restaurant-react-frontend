@@ -4,7 +4,6 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Dish } from "src/types";
 import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
-import { Loader } from "src/components/Loader";
 import { v4 as uuidv4 } from "uuid";
 import { OverlayModal } from "src/components/OverlayModal";
 import { FormInput } from "src/components/FormInput";
@@ -87,9 +86,13 @@ export const DishesManagment = (): JSX.Element => {
         </button>
       </div>
 
-      {dishes && <Table data={dishes} columns={dishesColumns} />}
-
-      {isLoadingDishes && <Loader />}
+      {
+        <Table
+          data={dishes ?? []}
+          columns={dishesColumns}
+          isLoading={isLoadingDishes}
+        />
+      }
 
       {shouldShowModal && (
         <OverlayModal onClose={() => setShouldShowModal(false)}>

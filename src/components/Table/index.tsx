@@ -10,9 +10,14 @@ import { JSX } from "react";
 type Props<T> = {
   data: T[];
   columns: ColumnDef<T>[];
+  isLoading: boolean;
 };
 
-export const Table = <T,>({ data, columns }: Props<T>): JSX.Element => {
+export const Table = <T,>({
+  data,
+  columns,
+  isLoading,
+}: Props<T>): JSX.Element => {
   const table = useReactTable({
     data,
     columns,
@@ -28,7 +33,7 @@ export const Table = <T,>({ data, columns }: Props<T>): JSX.Element => {
 
   return (
     <>
-      <table className="w-full outline-1 outline-gray-300 rounded-lg">
+      <table className="w-full outline-1 outline-gray-300 rounded-lg table-fixed">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={`table-headerGroup-${headerGroup.id}`}>
@@ -48,28 +53,57 @@ export const Table = <T,>({ data, columns }: Props<T>): JSX.Element => {
         </thead>
 
         <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr
-              className="hover:bg-neutral-100 cursor-pointer"
-              key={`table-row-${row.id}`}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <td
-                  className="p-3 pl-6 pr-2 text-left"
-                  key={`table-cell-${cell.id}`}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
+          {isLoading &&
+            Array.from({ length: 10 }).map((_, index) => (
+              <tr
+                className="hover:bg-neutral-100 cursor-pointer"
+                key={`table-row-skeleton-${index}`}
+              >
+                {Array.from({ length: columns.length }).map((_, index) => (
+                  <td
+                    className="p-3 pl-6 pr-2 text-left"
+                    key={`table-cell-skeleton-${index}`}
+                  >
+                    <div className="h-6 w-full bg-gray-200 rounded-sm animate-pulse" />
+                  </td>
+                ))}
+              </tr>
+            ))}
+
+          {!isLoading && !data.length && (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="text-center text-gray-500 text-lg py-8"
+              >
+                No data yet
+              </td>
             </tr>
-          ))}
+          )}
+
+          {!!data.length &&
+            table.getRowModel().rows.map((row) => (
+              <tr
+                className="hover:bg-neutral-100 cursor-pointer"
+                key={`table-row-${row.id}`}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    className="p-3 pl-6 pr-2 text-left"
+                    key={`table-cell-${cell.id}`}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
         </tbody>
       </table>
 
       <div className="flex justify-end items-center gap-2 mt-4">
         <p className="text-gray-500">
           Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          {table.getPageCount() || 1}
         </p>
         <button
           onClick={() => {
