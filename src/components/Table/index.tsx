@@ -53,6 +53,7 @@ export const Table = <T,>({
         </thead>
 
         <tbody>
+          {/* Skeleton Loader */}
           {isLoading &&
             Array.from({ length: 10 }).map((_, index) => (
               <tr
@@ -70,6 +71,7 @@ export const Table = <T,>({
               </tr>
             ))}
 
+          {/* No data */}
           {!isLoading && !data.length && (
             <tr>
               <td
@@ -81,6 +83,7 @@ export const Table = <T,>({
             </tr>
           )}
 
+          {/* Data */}
           {!!data.length &&
             table.getRowModel().rows.map((row) => (
               <tr
@@ -97,6 +100,22 @@ export const Table = <T,>({
                 ))}
               </tr>
             ))}
+
+          {/* Empty rows */}
+          {Array.from({ length: 10 - table.getRowModel().rows.length }).map(
+            (_, index) => (
+              <tr key={`table-row-empty-${index}`}>
+                {Array.from({ length: columns.length }).map((_, index) => (
+                  <td
+                    className="p-3 pl-6 pr-2 text-left"
+                    key={`table-cell-empty-${index}`}
+                  >
+                    <div className="h-6 w-full rounded-sm" />
+                  </td>
+                ))}
+              </tr>
+            )
+          )}
         </tbody>
       </table>
 

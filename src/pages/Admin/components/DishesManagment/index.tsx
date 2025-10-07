@@ -86,13 +86,11 @@ export const DishesManagment = (): JSX.Element => {
         </button>
       </div>
 
-      {
-        <Table
-          data={dishes ?? []}
-          columns={dishesColumns}
-          isLoading={isLoadingDishes}
-        />
-      }
+      <Table
+        data={dishes ?? []}
+        columns={dishesColumns}
+        isLoading={isLoadingDishes}
+      />
 
       {shouldShowModal && (
         <OverlayModal onClose={() => setShouldShowModal(false)}>

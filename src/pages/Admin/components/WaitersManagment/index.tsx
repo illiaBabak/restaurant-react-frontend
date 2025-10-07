@@ -94,13 +94,11 @@ export const WaitersManagment = (): JSX.Element => {
         </button>
       </div>
 
-      {
-        <Table
-          data={waiters ?? []}
-          columns={waitersColumns}
-          isLoading={isLoadingWaiters}
-        />
-      }
+      <Table
+        data={waiters ?? []}
+        columns={waitersColumns}
+        isLoading={isLoadingWaiters}
+      />
 
       {shouldShowModal && (
         <OverlayModal onClose={() => setShouldShowModal(false)}>
