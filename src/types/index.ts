@@ -1,7 +1,7 @@
+import { DISHES_CATEGORIES } from "src/utils/constants";
+
 export type Waiter = {
-  _id: {
-    $oid: string;
-  };
+  id: string;
   name: string;
   surname: string;
   email: string;
@@ -10,16 +10,20 @@ export type Waiter = {
 };
 
 export type Dish = {
-  _id: {
-    $oid: string;
-  };
+  id: string;
   name: string;
   price: number;
   weight: number;
-  category: string;
+  category: (typeof DISHES_CATEGORIES)[number];
 };
 
 export type Response<T> = {
   data: T;
   error: null;
+};
+
+export type AlertProps = {
+  text: string;
+  type: "success" | "error";
+  position: "top" | "bottom";
 };

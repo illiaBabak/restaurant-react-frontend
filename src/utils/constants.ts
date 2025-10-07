@@ -6,3 +6,5 @@ export const ROUTES = {
 };
 
 export const TABLES_CATEGORIES = ["Waiters", "Dishes"];
+
+export const DISHES_CATEGORIES = ["main", "starter", "dessert", "drink"];

@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.scss";
 import { App } from "./root";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "./index.scss";
 
 const rootEl = document.getElementById("root");
 

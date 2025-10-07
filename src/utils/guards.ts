@@ -14,10 +14,8 @@ export const isObject = (value: unknown): value is Record<string, unknown> =>
 
 export const isWaiter = (value: unknown): value is Waiter =>
   isObject(value) &&
-  "_id" in value &&
-  isObject(value._id) &&
-  "$oid" in value._id &&
-  isString(value._id.$oid) &&
+  "id" in value &&
+  isString(value.id) &&
   "name" in value &&
   isString(value.name) &&
   "surname" in value &&
@@ -39,10 +37,8 @@ export const isWaitersResponse = (
 
 export const isDish = (value: unknown): value is Dish =>
   isObject(value) &&
-  "_id" in value &&
-  isObject(value._id) &&
-  "$oid" in value._id &&
-  isString(value._id.$oid) &&
+  "id" in value &&
+  isString(value.id) &&
   "name" in value &&
   isString(value.name) &&
   "weight" in value &&
