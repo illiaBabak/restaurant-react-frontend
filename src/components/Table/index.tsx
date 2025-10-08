@@ -11,12 +11,14 @@ type Props<T> = {
   data: T[];
   columns: ColumnDef<T>[];
   isLoading: boolean;
+  onRowClick?: (element: T) => void;
 };
 
 export const Table = <T,>({
   data,
   columns,
   isLoading,
+  onRowClick,
 }: Props<T>): JSX.Element => {
   const table = useReactTable({
     data,
@@ -87,6 +89,7 @@ export const Table = <T,>({
           {!!data.length &&
             table.getRowModel().rows.map((row) => (
               <tr
+                onClick={() => onRowClick?.(row.original)}
                 className="hover:bg-neutral-100 cursor-pointer"
                 key={`table-row-${row.id}`}
               >
@@ -102,20 +105,21 @@ export const Table = <T,>({
             ))}
 
           {/* Empty rows */}
-          {Array.from({ length: 10 - table.getRowModel().rows.length }).map(
-            (_, index) => (
-              <tr key={`table-row-empty-${index}`}>
-                {Array.from({ length: columns.length }).map((_, index) => (
-                  <td
-                    className="p-3 pl-6 pr-2 text-left"
-                    key={`table-cell-empty-${index}`}
-                  >
-                    <div className="h-6 w-full rounded-sm" />
-                  </td>
-                ))}
-              </tr>
-            )
-          )}
+          {!!data.length &&
+            Array.from({ length: 10 - table.getRowModel().rows.length }).map(
+              (_, index) => (
+                <tr key={`table-row-empty-${index}`}>
+                  {Array.from({ length: columns.length }).map((_, index) => (
+                    <td
+                      className="p-3 pl-6 pr-2 text-left"
+                      key={`table-cell-empty-${index}`}
+                    >
+                      <div className="h-6 w-full rounded-sm" />
+                    </td>
+                  ))}
+                </tr>
+              )
+            )}
         </tbody>
       </table>
 

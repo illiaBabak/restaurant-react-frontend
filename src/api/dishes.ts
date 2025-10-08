@@ -1,8 +1,10 @@
 import { Dish } from "src/types";
 import {
   DISHES_ADD_QUERY,
+  DISHES_DELETE_QUERY,
   DISHES_GET_QUERY,
   DISHES_MUTATION,
+  DISHES_UPDATE_QUERY,
 } from "./constants";
 import { BACKEND_URL } from "src/utils/constants";
 import {
@@ -36,6 +38,27 @@ const addDish = async (dish: Dish): Promise<void> => {
   }
 };
 
+const updateDish = async (dish: Dish): Promise<void> => {
+  const response = await fetch(`${BACKEND_URL}/dishes/${dish.id}`, {
+    method: "PUT",
+    body: JSON.stringify(dish),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update dish");
+  }
+};
+
+const deleteDish = async (id: string): Promise<void> => {
+  const response = await fetch(`${BACKEND_URL}/dishes/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete dish");
+  }
+};
+
 export const useGetDishes = () =>
   useQuery({
     queryKey: [DISHES_GET_QUERY],
@@ -55,6 +78,56 @@ export const useAddDish = (): UseMutationResult<void, Error, Dish> => {
         queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
 
       queryClient.setQueryData([DISHES_GET_QUERY], [...prevDishes, dish]);
+
+      return { prevDishes };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+    },
+  });
+};
+
+export const useUpdateDish = (): UseMutationResult<void, Error, Dish> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [DISHES_MUTATION, DISHES_UPDATE_QUERY],
+    mutationFn: updateDish,
+    onMutate: (dish) => {
+      queryClient.cancelQueries({ queryKey: [DISHES_GET_QUERY] });
+
+      const prevDishes =
+        queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
+
+      queryClient.setQueryData(
+        [DISHES_GET_QUERY],
+        prevDishes.map((d) => (d.id === dish.id ? dish : d))
+      );
+
+      return { prevDishes };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+    },
+  });
+};
+
+export const useDeleteDish = (): UseMutationResult<void, Error, string> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: [DISHES_MUTATION, DISHES_DELETE_QUERY],
+    mutationFn: deleteDish,
+    onMutate: (id) => {
+      queryClient.cancelQueries({ queryKey: [DISHES_GET_QUERY] });
+
+      const prevDishes =
+        queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
+
+      queryClient.setQueryData(
+        [DISHES_GET_QUERY],
+        prevDishes.filter((d) => d.id !== id)
+      );
 
       return { prevDishes };
     },

@@ -1,5 +1,10 @@
-import { JSX, useContext, useState } from "react";
-import { useAddDish, useGetDishes } from "src/api/dishes";
+import { JSX, useContext, useEffect, useState } from "react";
+import {
+  useAddDish,
+  useDeleteDish,
+  useGetDishes,
+  useUpdateDish,
+} from "src/api/dishes";
 import { ColumnDef } from "@tanstack/react-table";
 import { Dish } from "src/types";
 import { Plus, X } from "lucide-react";
@@ -37,7 +42,13 @@ export const DishesManagment = (): JSX.Element => {
 
   const { mutateAsync: addDish } = useAddDish();
 
+  const { mutateAsync: updateDish } = useUpdateDish();
+
+  const { mutateAsync: deleteDish } = useDeleteDish();
+
   const [shouldShowModal, setShouldShowModal] = useState(false);
+
+  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
 
   const [newDish, setNewDish] = useState<Dish>({
     id: uuidv4(),
@@ -46,6 +57,27 @@ export const DishesManagment = (): JSX.Element => {
     weight: 0,
     category: "main",
   });
+
+  useEffect(() => {
+    if (selectedDish) {
+      setNewDish(selectedDish);
+      setShouldShowModal(true);
+    }
+  }, [selectedDish, setNewDish, setShouldShowModal]);
+
+  useEffect(() => {
+    if (shouldShowModal) return;
+
+    setNewDish({
+      id: uuidv4(),
+      name: "",
+      price: 0,
+      weight: 0,
+      category: "main",
+    });
+
+    setSelectedDish(null);
+  }, [shouldShowModal, setNewDish, setSelectedDish]);
 
   const handleCreateDish = async () => {
     if (!newDish.name) return;
@@ -68,9 +100,22 @@ export const DishesManagment = (): JSX.Element => {
       return;
     }
 
-    await addDish(newDish);
+    if (selectedDish) {
+      await updateDish(newDish);
+    } else {
+      await addDish(newDish);
+    }
 
     setShouldShowModal(false);
+  };
+
+  const handleDeleteDish = async () => {
+    if (!selectedDish) return;
+
+    await deleteDish(selectedDish.id);
+
+    setShouldShowModal(false);
+    setSelectedDish(null);
   };
 
   return (
@@ -90,6 +135,7 @@ export const DishesManagment = (): JSX.Element => {
         data={dishes ?? []}
         columns={dishesColumns}
         isLoading={isLoadingDishes}
+        onRowClick={(dish) => setSelectedDish(dish)}
       />
 
       {shouldShowModal && (
@@ -100,7 +146,7 @@ export const DishesManagment = (): JSX.Element => {
           >
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold tracking-wide mb-4">
-                Create Dish
+                {selectedDish ? "Update Dish" : "Create Dish"}
               </h2>
 
               <button
@@ -153,17 +199,29 @@ export const DishesManagment = (): JSX.Element => {
               </div>
 
               <div className="flex items-center gap-2 w-full flex-col">
-                <button
-                  className={`${
-                    newDish.name.length
-                      ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
-                      : "bg-gray-500/50 cursor-not-allowed"
-                  } w-[80%] text-white rounded-md p-2`}
-                  type="button"
-                  onClick={handleCreateDish}
-                >
-                  Create
-                </button>
+                <div className="flex items-center justify-center flex-row gap-4 w-[80%]">
+                  <button
+                    className={`${
+                      newDish.name.length
+                        ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
+                        : "bg-gray-500/50 cursor-not-allowed"
+                    } w-full text-white rounded-md p-2`}
+                    type="button"
+                    onClick={handleCreateDish}
+                  >
+                    {selectedDish ? "Update" : "Create"}
+                  </button>
+
+                  {!!selectedDish && (
+                    <button
+                      className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105`}
+                      type="button"
+                      onClick={handleDeleteDish}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
                 <button
                   className="cursor-pointer w-[80%] bg-rose-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105"
                   type="button"

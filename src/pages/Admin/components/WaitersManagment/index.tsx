@@ -1,7 +1,12 @@
-import { JSX, useContext, useState } from "react";
+import { JSX, useContext, useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Waiter } from "src/types";
-import { useAddWaiter, useGetWaiters } from "src/api/waiters";
+import {
+  useAddWaiter,
+  useDeleteWaiter,
+  useGetWaiters,
+  useUpdateWaiter,
+} from "src/api/waiters";
 import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
 import { OverlayModal } from "src/components/OverlayModal";
@@ -41,7 +46,13 @@ export const WaitersManagment = (): JSX.Element => {
 
   const { mutateAsync: addWaiter } = useAddWaiter();
 
+  const { mutateAsync: updateWaiter } = useUpdateWaiter();
+
+  const { mutateAsync: deleteWaiter } = useDeleteWaiter();
+
   const [shouldShowModal, setShouldShowModal] = useState(false);
+
+  const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
 
   const [newWaiter, setNewWaiter] = useState<Waiter>({
     id: uuidv4(),
@@ -51,6 +62,28 @@ export const WaitersManagment = (): JSX.Element => {
     phone_number: "",
     address: "",
   });
+
+  useEffect(() => {
+    if (selectedWaiter) {
+      setNewWaiter(selectedWaiter);
+      setShouldShowModal(true);
+    }
+  }, [selectedWaiter, setNewWaiter, setShouldShowModal]);
+
+  useEffect(() => {
+    if (shouldShowModal) return;
+
+    setNewWaiter({
+      id: uuidv4(),
+      name: "",
+      surname: "",
+      email: "",
+      phone_number: "",
+      address: "",
+    });
+
+    setSelectedWaiter(null);
+  }, [shouldShowModal, setNewWaiter]);
 
   const allFieldsAreFilled = Object.values(newWaiter).every(Boolean);
 
@@ -76,9 +109,22 @@ export const WaitersManagment = (): JSX.Element => {
       return;
     }
 
-    await addWaiter(newWaiter);
+    if (selectedWaiter) {
+      await updateWaiter(newWaiter);
+    } else {
+      await addWaiter(newWaiter);
+    }
 
     setShouldShowModal(false);
+  };
+
+  const handleDeleteWaiter = async () => {
+    if (!selectedWaiter) return;
+
+    await deleteWaiter(selectedWaiter.id);
+
+    setShouldShowModal(false);
+    setSelectedWaiter(null);
   };
 
   return (
@@ -98,6 +144,7 @@ export const WaitersManagment = (): JSX.Element => {
         data={waiters ?? []}
         columns={waitersColumns}
         isLoading={isLoadingWaiters}
+        onRowClick={(waiter) => setSelectedWaiter(waiter)}
       />
 
       {shouldShowModal && (
@@ -108,7 +155,7 @@ export const WaitersManagment = (): JSX.Element => {
           >
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold tracking-wide mb-4">
-                Create Waiter
+                {selectedWaiter ? "Update Waiter" : "Create Waiter"}
               </h2>
 
               <button
@@ -169,17 +216,30 @@ export const WaitersManagment = (): JSX.Element => {
               </div>
 
               <div className="flex items-center gap-2 w-full flex-col">
-                <button
-                  className={`${
-                    allFieldsAreFilled
-                      ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
-                      : "bg-gray-500/50 cursor-not-allowed"
-                  } w-[80%] text-white rounded-md p-2`}
-                  type="button"
-                  onClick={handleCreateWaiter}
-                >
-                  Create
-                </button>
+                <div className="flex items-center justify-center flex-row gap-4 w-[80%]">
+                  <button
+                    className={`${
+                      allFieldsAreFilled
+                        ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
+                        : "bg-gray-500/50 cursor-not-allowed"
+                    } w-full text-white rounded-md p-2`}
+                    type="button"
+                    onClick={handleCreateWaiter}
+                  >
+                    {selectedWaiter ? "Update" : "Create"}
+                  </button>
+
+                  {!!selectedWaiter && (
+                    <button
+                      className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105`}
+                      type="button"
+                      onClick={handleDeleteWaiter}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+
                 <button
                   className="cursor-pointer w-[80%] bg-rose-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105"
                   type="button"
