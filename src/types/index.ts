@@ -17,6 +17,16 @@ export type Dish = {
   category: (typeof DISHES_CATEGORIES)[number];
 };
 
+export type Bill = {
+  id: string;
+  created_at: string;
+  waiter_id: string;
+  dishes: {
+    dish_id: string;
+    quantity: number;
+  }[];
+};
+
 export type Response<T> = {
   data: T;
   error: null;
