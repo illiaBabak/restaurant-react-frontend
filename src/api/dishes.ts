@@ -1,4 +1,4 @@
-import { Dish } from "src/types";
+import { Dish, NewDish } from "src/types";
 import {
   DISHES_ADD_QUERY,
   DISHES_DELETE_QUERY,
@@ -27,7 +27,7 @@ const getDishes = async (): Promise<Dish[]> => {
   return isDishesResponse(result) ? result.data : [];
 };
 
-const addDish = async (dish: Dish): Promise<void> => {
+const addDish = async (dish: NewDish): Promise<void> => {
   const response = await fetch(`${BACKEND_URL}/dishes`, {
     method: "POST",
     body: JSON.stringify(dish),
@@ -65,7 +65,7 @@ export const useGetDishes = () =>
     queryFn: getDishes,
   });
 
-export const useAddDish = (): UseMutationResult<void, Error, Dish> => {
+export const useAddDish = (): UseMutationResult<void, Error, NewDish> => {
   const queryClient = useQueryClient();
 
   return useMutation({

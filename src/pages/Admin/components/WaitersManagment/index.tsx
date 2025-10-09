@@ -1,6 +1,6 @@
-import { JSX, useContext, useEffect, useState } from "react";
+import { JSX, useContext, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Waiter } from "src/types";
+import { NewWaiter, Waiter } from "src/types";
 import {
   useAddWaiter,
   useDeleteWaiter,
@@ -10,7 +10,6 @@ import {
 import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
 import { OverlayModal } from "src/components/OverlayModal";
-import { v4 as uuidv4 } from "uuid";
 import { isValidEmail } from "src/utils/isValidEmail";
 import { isValidPhoneNumber } from "src/utils/isValidPhoneNumber";
 import { GlobalContext } from "src/root";
@@ -39,6 +38,14 @@ const waitersColumns: ColumnDef<Waiter>[] = [
   },
 ];
 
+const EMPTY_WAITER_VALUES: NewWaiter = {
+  name: "",
+  surname: "",
+  email: "",
+  phone_number: "",
+  address: "",
+};
+
 export const WaitersManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
@@ -52,45 +59,24 @@ export const WaitersManagment = (): JSX.Element => {
 
   const [shouldShowModal, setShouldShowModal] = useState(false);
 
-  const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
+  const [waiterToEdit, setWaiterToEdit] = useState<Waiter | null>(null);
 
-  const [newWaiter, setNewWaiter] = useState<Waiter>({
-    id: uuidv4(),
-    name: "",
-    surname: "",
-    email: "",
-    phone_number: "",
-    address: "",
-  });
+  const [newWaiter, setNewWaiter] = useState<NewWaiter>(EMPTY_WAITER_VALUES);
 
-  useEffect(() => {
-    if (selectedWaiter) {
-      setNewWaiter(selectedWaiter);
-      setShouldShowModal(true);
-    }
-  }, [selectedWaiter, setNewWaiter, setShouldShowModal]);
+  const allFieldsAreFilled = Object.values(
+    waiterToEdit ? waiterToEdit : newWaiter
+  ).every(Boolean);
 
-  useEffect(() => {
-    if (shouldShowModal) return;
+  const closeModal = () => {
+    setShouldShowModal(false);
+    setNewWaiter(EMPTY_WAITER_VALUES);
+    setWaiterToEdit(null);
+  };
 
-    setNewWaiter({
-      id: uuidv4(),
-      name: "",
-      surname: "",
-      email: "",
-      phone_number: "",
-      address: "",
-    });
-
-    setSelectedWaiter(null);
-  }, [shouldShowModal, setNewWaiter]);
-
-  const allFieldsAreFilled = Object.values(newWaiter).every(Boolean);
-
-  const handleCreateWaiter = async () => {
+  const handleCreateAndUpdateWaiter = async () => {
     if (!allFieldsAreFilled) return;
 
-    if (!isValidEmail(newWaiter.email)) {
+    if (!isValidEmail(waiterToEdit ? waiterToEdit.email : newWaiter.email)) {
       setAlertProps({
         text: "Invalid email",
         type: "error",
@@ -99,7 +85,11 @@ export const WaitersManagment = (): JSX.Element => {
       return;
     }
 
-    if (!isValidPhoneNumber(newWaiter.phone_number)) {
+    if (
+      !isValidPhoneNumber(
+        waiterToEdit ? waiterToEdit.phone_number : newWaiter.phone_number
+      )
+    ) {
       setAlertProps({
         text: "Invalid phone number",
         type: "error",
@@ -109,22 +99,18 @@ export const WaitersManagment = (): JSX.Element => {
       return;
     }
 
-    if (selectedWaiter) {
-      await updateWaiter(newWaiter);
-    } else {
-      await addWaiter(newWaiter);
-    }
+    if (waiterToEdit) await updateWaiter(waiterToEdit);
+    else await addWaiter(newWaiter);
 
-    setShouldShowModal(false);
+    closeModal();
   };
 
   const handleDeleteWaiter = async () => {
-    if (!selectedWaiter) return;
+    if (!waiterToEdit) return;
 
-    await deleteWaiter(selectedWaiter.id);
+    await deleteWaiter(waiterToEdit.id);
 
-    setShouldShowModal(false);
-    setSelectedWaiter(null);
+    closeModal();
   };
 
   return (
@@ -144,23 +130,26 @@ export const WaitersManagment = (): JSX.Element => {
         data={waiters ?? []}
         columns={waitersColumns}
         isLoading={isLoadingWaiters}
-        onRowClick={(waiter) => setSelectedWaiter(waiter)}
+        getClickedRow={(waiter) => {
+          setWaiterToEdit(waiter);
+          setShouldShowModal(true);
+        }}
       />
 
       {shouldShowModal && (
-        <OverlayModal onClose={() => setShouldShowModal(false)}>
+        <OverlayModal onClose={closeModal}>
           <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white p-4 rounded-lg cursor-default w-[50%] h-[85%]"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold tracking-wide mb-4">
-                {selectedWaiter ? "Update Waiter" : "Create Waiter"}
+                {waiterToEdit ? "Update Waiter" : "Create Waiter"}
               </h2>
 
               <button
                 className="cursor-pointer mb-4 transition-all duration-300 hover:scale-115"
-                onClick={() => setShouldShowModal(false)}
+                onClick={closeModal}
               >
                 <X className="w-7 h-7" />
               </button>
@@ -171,45 +160,66 @@ export const WaitersManagment = (): JSX.Element => {
                 <FormInput
                   label="name"
                   placeholder="Enter name"
-                  value={newWaiter.name}
+                  value={waiterToEdit ? waiterToEdit.name : newWaiter.name}
                   onChange={({ target: { value } }) =>
-                    setNewWaiter({ ...newWaiter, name: value })
+                    waiterToEdit
+                      ? setWaiterToEdit({ ...waiterToEdit, name: value })
+                      : setNewWaiter({ ...newWaiter, name: value })
                   }
                   type="text"
                 />
                 <FormInput
                   label="surname"
                   placeholder="Enter surname"
-                  value={newWaiter.surname}
+                  value={
+                    waiterToEdit ? waiterToEdit.surname : newWaiter.surname
+                  }
                   onChange={({ target: { value } }) =>
-                    setNewWaiter({ ...newWaiter, surname: value })
+                    waiterToEdit
+                      ? setWaiterToEdit({ ...waiterToEdit, surname: value })
+                      : setNewWaiter({ ...newWaiter, surname: value })
                   }
                   type="text"
                 />
                 <FormInput
                   label="email"
                   placeholder="Eg example@example.com"
-                  value={newWaiter.email}
+                  value={waiterToEdit ? waiterToEdit.email : newWaiter.email}
                   onChange={({ target: { value } }) =>
-                    setNewWaiter({ ...newWaiter, email: value })
+                    waiterToEdit
+                      ? setWaiterToEdit({ ...waiterToEdit, email: value })
+                      : setNewWaiter({ ...newWaiter, email: value })
                   }
                   type="email"
                 />
                 <FormInput
                   label="phone_number"
                   placeholder="Eg +1 800 000000"
-                  value={newWaiter.phone_number}
+                  value={
+                    waiterToEdit
+                      ? waiterToEdit.phone_number
+                      : newWaiter.phone_number
+                  }
                   onChange={({ target: { value } }) =>
-                    setNewWaiter({ ...newWaiter, phone_number: value })
+                    waiterToEdit
+                      ? setWaiterToEdit({
+                          ...waiterToEdit,
+                          phone_number: value,
+                        })
+                      : setNewWaiter({ ...newWaiter, phone_number: value })
                   }
                   type="text"
                 />
                 <FormInput
                   label="address"
                   placeholder="Eg 123 Main St, New York, USA"
-                  value={newWaiter.address}
+                  value={
+                    waiterToEdit ? waiterToEdit.address : newWaiter.address
+                  }
                   onChange={({ target: { value } }) =>
-                    setNewWaiter({ ...newWaiter, address: value })
+                    waiterToEdit
+                      ? setWaiterToEdit({ ...waiterToEdit, address: value })
+                      : setNewWaiter({ ...newWaiter, address: value })
                   }
                   type="text"
                 />
@@ -224,12 +234,12 @@ export const WaitersManagment = (): JSX.Element => {
                         : "bg-gray-500/50 cursor-not-allowed"
                     } w-full text-white rounded-md p-2`}
                     type="button"
-                    onClick={handleCreateWaiter}
+                    onClick={handleCreateAndUpdateWaiter}
                   >
-                    {selectedWaiter ? "Update" : "Create"}
+                    {waiterToEdit ? "Update" : "Create"}
                   </button>
 
-                  {!!selectedWaiter && (
+                  {!!waiterToEdit && (
                     <button
                       className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105`}
                       type="button"
@@ -243,7 +253,7 @@ export const WaitersManagment = (): JSX.Element => {
                 <button
                   className="cursor-pointer w-[80%] bg-rose-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105"
                   type="button"
-                  onClick={() => setShouldShowModal(false)}
+                  onClick={closeModal}
                 >
                   Cancel
                 </button>

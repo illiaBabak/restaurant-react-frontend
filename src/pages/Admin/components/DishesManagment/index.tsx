@@ -1,4 +1,4 @@
-import { JSX, useContext, useEffect, useState } from "react";
+import { JSX, useContext, useState } from "react";
 import {
   useAddDish,
   useDeleteDish,
@@ -6,10 +6,9 @@ import {
   useUpdateDish,
 } from "src/api/dishes";
 import { ColumnDef } from "@tanstack/react-table";
-import { Dish } from "src/types";
+import { Dish, NewDish } from "src/types";
 import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
-import { v4 as uuidv4 } from "uuid";
 import { OverlayModal } from "src/components/OverlayModal";
 import { FormInput } from "src/components/FormInput";
 import { GlobalContext } from "src/root";
@@ -35,6 +34,13 @@ const dishesColumns: ColumnDef<Dish>[] = [
   },
 ];
 
+const EMPTY_DISH_VALUES: NewDish = {
+  name: "",
+  price: 0,
+  weight: 0,
+  category: "main",
+};
+
 export const DishesManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
@@ -48,41 +54,20 @@ export const DishesManagment = (): JSX.Element => {
 
   const [shouldShowModal, setShouldShowModal] = useState(false);
 
-  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+  const [dishToEdit, setDishToEdit] = useState<Dish | null>(null);
 
-  const [newDish, setNewDish] = useState<Dish>({
-    id: uuidv4(),
-    name: "",
-    price: 0,
-    weight: 0,
-    category: "main",
-  });
+  const [newDish, setNewDish] = useState<NewDish>(EMPTY_DISH_VALUES);
 
-  useEffect(() => {
-    if (selectedDish) {
-      setNewDish(selectedDish);
-      setShouldShowModal(true);
-    }
-  }, [selectedDish, setNewDish, setShouldShowModal]);
+  const closeModal = () => {
+    setShouldShowModal(false);
+    setNewDish(EMPTY_DISH_VALUES);
+    setDishToEdit(null);
+  };
 
-  useEffect(() => {
-    if (shouldShowModal) return;
+  const handleCreateAndUpdateDish = async () => {
+    if (dishToEdit ? !dishToEdit.name : !newDish.name) return;
 
-    setNewDish({
-      id: uuidv4(),
-      name: "",
-      price: 0,
-      weight: 0,
-      category: "main",
-    });
-
-    setSelectedDish(null);
-  }, [shouldShowModal, setNewDish, setSelectedDish]);
-
-  const handleCreateDish = async () => {
-    if (!newDish.name) return;
-
-    if (newDish.price <= 0) {
+    if (dishToEdit ? dishToEdit.price <= 0 : newDish.price <= 0) {
       setAlertProps({
         text: "Price must be greater than 0",
         type: "error",
@@ -91,7 +76,7 @@ export const DishesManagment = (): JSX.Element => {
       return;
     }
 
-    if (newDish.weight <= 0) {
+    if (dishToEdit ? dishToEdit.weight <= 0 : newDish.weight <= 0) {
       setAlertProps({
         text: "Weight must be greater than 0",
         type: "error",
@@ -100,22 +85,18 @@ export const DishesManagment = (): JSX.Element => {
       return;
     }
 
-    if (selectedDish) {
-      await updateDish(newDish);
-    } else {
-      await addDish(newDish);
-    }
+    if (dishToEdit) await updateDish(dishToEdit);
+    else await addDish(newDish);
 
-    setShouldShowModal(false);
+    closeModal();
   };
 
   const handleDeleteDish = async () => {
-    if (!selectedDish) return;
+    if (!dishToEdit) return;
 
-    await deleteDish(selectedDish.id);
+    await deleteDish(dishToEdit.id);
 
-    setShouldShowModal(false);
-    setSelectedDish(null);
+    closeModal();
   };
 
   return (
@@ -135,23 +116,26 @@ export const DishesManagment = (): JSX.Element => {
         data={dishes ?? []}
         columns={dishesColumns}
         isLoading={isLoadingDishes}
-        onRowClick={(dish) => setSelectedDish(dish)}
+        getClickedRow={(dish) => {
+          setDishToEdit(dish);
+          setShouldShowModal(true);
+        }}
       />
 
       {shouldShowModal && (
-        <OverlayModal onClose={() => setShouldShowModal(false)}>
+        <OverlayModal onClose={closeModal}>
           <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white p-4 rounded-lg cursor-default w-[50%] h-[65%]"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold tracking-wide mb-4">
-                {selectedDish ? "Update Dish" : "Create Dish"}
+                {dishToEdit ? "Update Dish" : "Create Dish"}
               </h2>
 
               <button
                 className="cursor-pointer mb-4 transition-all duration-300 hover:scale-115"
-                onClick={() => setShouldShowModal(false)}
+                onClick={closeModal}
               >
                 <X className="w-7 h-7" />
               </button>
@@ -162,27 +146,41 @@ export const DishesManagment = (): JSX.Element => {
                 <FormInput
                   label="name"
                   placeholder="Enter name"
-                  value={newDish.name}
+                  value={dishToEdit ? dishToEdit.name : newDish.name}
                   onChange={({ target: { value } }) =>
-                    setNewDish({ ...newDish, name: value })
+                    dishToEdit
+                      ? setDishToEdit({ ...dishToEdit, name: value })
+                      : setNewDish({ ...newDish, name: value })
                   }
                   type="text"
                 />
                 <FormInput
                   label="price"
                   placeholder="Enter price"
-                  value={newDish.price.toString()}
+                  value={
+                    dishToEdit
+                      ? dishToEdit.price.toString()
+                      : newDish.price.toString()
+                  }
                   onChange={({ target: { value } }) =>
-                    setNewDish({ ...newDish, price: Number(value) })
+                    dishToEdit
+                      ? setDishToEdit({ ...dishToEdit, price: Number(value) })
+                      : setNewDish({ ...newDish, price: Number(value) })
                   }
                   type="number"
                 />
                 <FormInput
                   label="weight"
                   placeholder="Enter weight"
-                  value={newDish.weight.toString()}
+                  value={
+                    dishToEdit
+                      ? dishToEdit.weight.toString()
+                      : newDish.weight.toString()
+                  }
                   onChange={({ target: { value } }) =>
-                    setNewDish({ ...newDish, weight: Number(value) })
+                    dishToEdit
+                      ? setDishToEdit({ ...dishToEdit, weight: Number(value) })
+                      : setNewDish({ ...newDish, weight: Number(value) })
                   }
                   type="number"
                 />
@@ -190,9 +188,13 @@ export const DishesManagment = (): JSX.Element => {
                   <label>Category</label>
                   <Dropdown
                     options={DISHES_CATEGORIES}
-                    selectedOption={newDish.category}
+                    selectedOption={
+                      dishToEdit ? dishToEdit.category : newDish.category
+                    }
                     setSelectedOption={(option) =>
-                      setNewDish({ ...newDish, category: option })
+                      dishToEdit
+                        ? setDishToEdit({ ...dishToEdit, category: option })
+                        : setNewDish({ ...newDish, category: option })
                     }
                   />
                 </div>
@@ -202,17 +204,21 @@ export const DishesManagment = (): JSX.Element => {
                 <div className="flex items-center justify-center flex-row gap-4 w-[80%]">
                   <button
                     className={`${
-                      newDish.name.length
+                      (
+                        dishToEdit
+                          ? dishToEdit.name.length
+                          : newDish.name.length
+                      )
                         ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
                         : "bg-gray-500/50 cursor-not-allowed"
                     } w-full text-white rounded-md p-2`}
                     type="button"
-                    onClick={handleCreateDish}
+                    onClick={handleCreateAndUpdateDish}
                   >
-                    {selectedDish ? "Update" : "Create"}
+                    {dishToEdit ? "Update" : "Create"}
                   </button>
 
-                  {!!selectedDish && (
+                  {!!dishToEdit && (
                     <button
                       className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105`}
                       type="button"
@@ -225,7 +231,7 @@ export const DishesManagment = (): JSX.Element => {
                 <button
                   className="cursor-pointer w-[80%] bg-rose-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105"
                   type="button"
-                  onClick={() => setShouldShowModal(false)}
+                  onClick={closeModal}
                 >
                   Cancel
                 </button>

@@ -1,7 +1,6 @@
 import { DISHES_CATEGORIES } from "src/utils/constants";
 
-export type Waiter = {
-  id: string;
+type WaiterBase = {
   name: string;
   surname: string;
   email: string;
@@ -9,16 +8,22 @@ export type Waiter = {
   address: string;
 };
 
-export type Dish = {
-  id: string;
+export type Waiter = WaiterBase & { id: string };
+
+export type NewWaiter = WaiterBase;
+
+type DishBase = {
   name: string;
   price: number;
   weight: number;
   category: (typeof DISHES_CATEGORIES)[number];
 };
 
-export type Bill = {
-  id: string;
+export type Dish = DishBase & { id: string };
+
+export type NewDish = DishBase;
+
+type BillBase = {
   created_at: string;
   waiter_id: string;
   dishes: {
@@ -26,6 +31,10 @@ export type Bill = {
     quantity: number;
   }[];
 };
+
+export type Bill = BillBase & { id: string };
+
+export type NewBill = BillBase;
 
 export type Response<T> = {
   data: T;

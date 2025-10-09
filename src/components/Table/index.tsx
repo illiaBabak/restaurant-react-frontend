@@ -11,14 +11,14 @@ type Props<T> = {
   data: T[];
   columns: ColumnDef<T>[];
   isLoading: boolean;
-  onRowClick?: (element: T) => void;
+  getClickedRow?: (element: T) => void;
 };
 
 export const Table = <T,>({
   data,
   columns,
   isLoading,
-  onRowClick,
+  getClickedRow,
 }: Props<T>): JSX.Element => {
   const table = useReactTable({
     data,
@@ -89,7 +89,7 @@ export const Table = <T,>({
           {!!data.length &&
             table.getRowModel().rows.map((row) => (
               <tr
-                onClick={() => onRowClick?.(row.original)}
+                onClick={() => getClickedRow?.(row.original)}
                 className="hover:bg-neutral-100 cursor-pointer"
                 key={`table-row-${row.id}`}
               >
@@ -105,21 +105,21 @@ export const Table = <T,>({
             ))}
 
           {/* Empty rows */}
-          {!!data.length &&
-            Array.from({ length: 10 - table.getRowModel().rows.length }).map(
-              (_, index) => (
-                <tr key={`table-row-empty-${index}`}>
-                  {Array.from({ length: columns.length }).map((_, index) => (
-                    <td
-                      className="p-3 pl-6 pr-2 text-left"
-                      key={`table-cell-empty-${index}`}
-                    >
-                      <div className="h-6 w-full rounded-sm" />
-                    </td>
-                  ))}
-                </tr>
-              )
-            )}
+          {!isLoading &&
+            Array.from({
+              length: (!data.length ? 8 : 10) - table.getRowModel().rows.length,
+            }).map((_, index) => (
+              <tr key={`table-row-empty-${index}`}>
+                {Array.from({ length: columns.length }).map((_, index) => (
+                  <td
+                    className="p-3 pl-6 pr-2 text-left"
+                    key={`table-cell-empty-${index}`}
+                  >
+                    <div className="h-6 w-full rounded-sm" />
+                  </td>
+                ))}
+              </tr>
+            ))}
         </tbody>
       </table>
 

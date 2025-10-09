@@ -6,7 +6,6 @@ import { Dropdown } from "src/components/Dropdown";
 import { Waiter } from "src/types";
 import { Loader } from "src/components/Loader";
 import { useCreateBill } from "src/api/bills";
-import { v4 as uuidv4 } from "uuid";
 import { GlobalContext } from "src/root";
 
 export const Receipt = (): JSX.Element => {
@@ -41,14 +40,11 @@ export const Receipt = (): JSX.Element => {
       return;
     }
 
-    const t = {
-      id: uuidv4(),
+    const blob = await createBill({
       created_at: new Date().toISOString(),
       waiter_id: selectedWaiter?.id ?? "",
       dishes: selectedDishes,
-    };
-    console.log(t);
-    const blob = await createBill(t);
+    });
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -84,10 +80,10 @@ export const Receipt = (): JSX.Element => {
           </button>
         </div>
 
-        <div className="grid grid-cols-6 gap-5 mt-1">
+        <div className="grid grid-cols-5 gap-6 mt-1">
           {dishes?.map((dish) => (
             <div
-              className="bg-violet-500 text-white p-3 rounded-md flex flex-col gap-2 text-center justify-start items-center h-[180px]"
+              className="bg-violet-500 text-white p-3 rounded-md flex flex-col gap-2 text-center justify-start items-center h-[200px]"
               key={`${dish.id}-${dish.name}-dish`}
             >
               <h2 className="text-xl font-bold">{dish.name}</h2>
