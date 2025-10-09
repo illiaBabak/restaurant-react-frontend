@@ -13,7 +13,7 @@ export const Admin = (): JSX.Element => {
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <div className="flex items-start h-full">
+      <div className="flex flex-col lg:flex-row items-start h-full">
         <SideBar />
 
         {selectedTableCategory === "Waiters" && <WaitersManagment />}

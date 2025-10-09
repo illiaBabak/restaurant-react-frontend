@@ -58,7 +58,7 @@ export const Receipt = (): JSX.Element => {
     <div>
       <Header />
       <div className="flex p-4 flex-col gap-4 w-full">
-        <div className="flex flex-row items-center justify-between w-full mt-1">
+        <div className="flex sm:flex-row flex-col items-center justify-between w-full mt-1">
           <div className="flex flex-row gap-4 items-center">
             <h2>Waiter</h2>
             <Dropdown
@@ -73,23 +73,25 @@ export const Receipt = (): JSX.Element => {
           </div>
 
           <button
-            className="bg-yellow-600 text-white px-4 py-2 rounded-md cursor-pointer transition-all duration-300 hover:scale-105"
+            className="bg-yellow-600 sm:mt-0 mt-4 text-white px-4 py-2 rounded-md cursor-pointer transition-all duration-300 hover:scale-105"
             onClick={handleCreateBill}
           >
             Create Bill
           </button>
         </div>
 
-        <div className="grid grid-cols-5 gap-6 mt-1">
+        <div className="grid lg:grid-cols-5 grid-cols-2 gap-6 mt-1">
           {dishes?.map((dish) => (
             <div
-              className="bg-violet-500 text-white p-3 rounded-md flex flex-col gap-2 text-center justify-start items-center h-[200px]"
+              className="bg-violet-500 text-white md:p-3 p-1 rounded-md flex flex-col gap-2 text-center justify-center md:justify-start items-center md:h-[200px] h-[160px]"
               key={`${dish.id}-${dish.name}-dish`}
             >
-              <h2 className="text-xl font-bold">{dish.name}</h2>
-              <i className="text-sm">Category: {dish.category}</i>
-              <i className="text-sm">Price: {dish.price}$</i>
-              <i className="text-sm">Weight: {dish.weight}g</i>
+              <h2 className="text-base md:text-xl font-bold">{dish.name}</h2>
+              <i className="text-[10px] md:text-sm">
+                Category: {dish.category}
+              </i>
+              <i className="text-[10px] md:text-sm">Price: {dish.price}$</i>
+              <i className="text-[10px] md:text-sm">Weight: {dish.weight}g</i>
 
               <div className="flex flex-row items-center gap-1">
                 <button
@@ -121,7 +123,7 @@ export const Receipt = (): JSX.Element => {
                 >
                   -
                 </button>
-                <p className="p-0 m-0 text-2xl">
+                <p className="p-0 m-0 text-xl md:text-2xl">
                   {selectedDishes.find((d) => d.dish_id === dish.id)
                     ?.quantity ?? 0}
                 </p>

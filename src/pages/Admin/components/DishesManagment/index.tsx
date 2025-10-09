@@ -100,15 +100,17 @@ export const DishesManagment = (): JSX.Element => {
   };
 
   return (
-    <div className="w-full px-7 pt-4">
-      <div className="flex justify-between items-center flex-row my-4">
-        <h2 className="text-2xl font-bold tracking-wide mb-4">Dishes</h2>
+    <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
+      <div className="flex justify-between items-center flex-row my-2">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-3 sm:mb-4">
+          Dishes
+        </h2>
 
         <button
           onClick={() => setShouldShowModal(true)}
-          className="rounded-md cursor-pointer transition-all duration-300 hover:scale-115 mb-4"
+          className="rounded-md cursor-pointer transition-all duration-300 hover:scale-115 mb-3 sm:mb-4"
         >
-          <Plus className="w-7 h-7" />
+          <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
         </button>
       </div>
 
@@ -126,10 +128,10 @@ export const DishesManagment = (): JSX.Element => {
         <OverlayModal onClose={closeModal}>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white p-4 rounded-lg cursor-default w-[50%] h-[65%]"
+            className="bg-white p-4 sm:p-6 rounded-[0px] sm:rounded-lg cursor-default w-full h-full sm:w-[90%] sm:h-[85%] md:w-[75%] md:h-[75%] lg:w-[60%] lg:h-[70%] xl:w-[50%] xl:h-[65%] max-w-2xl overflow-y-auto"
           >
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold tracking-wide mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-4">
                 {dishToEdit ? "Update Dish" : "Create Dish"}
               </h2>
 
@@ -137,12 +139,12 @@ export const DishesManagment = (): JSX.Element => {
                 className="cursor-pointer mb-4 transition-all duration-300 hover:scale-115"
                 onClick={closeModal}
               >
-                <X className="w-7 h-7" />
+                <X className="w-6 h-6 sm:w-7 sm:h-7" />
               </button>
             </div>
 
-            <form className="flex flex-col justify-between h-[90%]">
-              <div className="flex flex-col gap-4">
+            <form className="flex flex-col justify-between min-h-[calc(100%-4rem)]">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 <FormInput
                   label="name"
                   placeholder="Enter name"
@@ -184,8 +186,8 @@ export const DishesManagment = (): JSX.Element => {
                   }
                   type="number"
                 />
-                <div className="flex flex-row items-center gap-2">
-                  <label>Category</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <label className="text-sm sm:text-base">Category</label>
                   <Dropdown
                     options={DISHES_CATEGORIES}
                     selectedOption={
@@ -200,8 +202,8 @@ export const DishesManagment = (): JSX.Element => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 w-full flex-col">
-                <div className="flex items-center justify-center flex-row gap-4 w-[80%]">
+              <div className="flex items-center gap-3 sm:gap-2 w-full flex-col mt-4">
+                <div className="flex items-center justify-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-[80%]">
                   <button
                     className={`${
                       (
@@ -211,7 +213,7 @@ export const DishesManagment = (): JSX.Element => {
                       )
                         ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
                         : "bg-gray-500/50 cursor-not-allowed"
-                    } w-full text-white rounded-md p-2`}
+                    } w-full text-white rounded-md p-2 sm:p-2.5 text-sm sm:text-base`}
                     type="button"
                     onClick={handleCreateAndUpdateDish}
                   >
@@ -220,7 +222,7 @@ export const DishesManagment = (): JSX.Element => {
 
                   {!!dishToEdit && (
                     <button
-                      className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105`}
+                      className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 sm:p-2.5 transition-all duration-300 hover:scale-105 text-sm sm:text-base`}
                       type="button"
                       onClick={handleDeleteDish}
                     >
@@ -229,7 +231,7 @@ export const DishesManagment = (): JSX.Element => {
                   )}
                 </div>
                 <button
-                  className="cursor-pointer w-[80%] bg-rose-500 text-white rounded-md p-2 transition-all duration-300 hover:scale-105"
+                  className="cursor-pointer w-full sm:w-[80%] bg-rose-500 text-white rounded-md p-2 sm:p-2.5 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
                   type="button"
                   onClick={closeModal}
                 >
