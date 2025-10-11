@@ -6,12 +6,10 @@ type Props<T extends string> = {
   options: T[];
   selectedOption: T;
   setSelectedOption: (value: T) => void;
-  optionsDisplay?: Record<T, string>;
 };
 
 export const Dropdown = <T extends string>({
   options,
-  optionsDisplay,
   selectedOption,
   setSelectedOption,
 }: Props<T>): JSX.Element => {
@@ -29,7 +27,7 @@ export const Dropdown = <T extends string>({
         >
           <div className="flex items-center gap-2">
             <span className="text-base font-medium text-gray-700">
-              {optionsDisplay?.[selectedOption] ?? selectedOption}
+              {selectedOption}
             </span>
           </div>
           <motion.img
@@ -72,7 +70,7 @@ export const Dropdown = <T extends string>({
                   }}
                 >
                   <span className="text-base font-medium text-gray-700">
-                    {optionsDisplay?.[option] ?? option}
+                    {option}
                   </span>
                   {selectedOption === option && (
                     <span className="ml-auto text-blue-600">✓</span>
