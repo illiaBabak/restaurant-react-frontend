@@ -12,7 +12,7 @@ import { Table } from "src/components/Table";
 import { OverlayModal } from "src/components/OverlayModal";
 import { isValidEmail } from "src/utils/isValidEmail";
 import { isValidPhoneNumber } from "src/utils/isValidPhoneNumber";
-import { GlobalContext } from "src/root";
+import { GlobalContext } from "src/contexts/contexts";
 import { FormInput } from "src/components/FormInput";
 
 const waitersColumns: ColumnDef<Waiter>[] = [

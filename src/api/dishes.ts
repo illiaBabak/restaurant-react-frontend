@@ -12,11 +12,13 @@ import {
   UseMutationResult,
   useQuery,
   useQueryClient,
+  UseQueryOptions,
 } from "@tanstack/react-query";
 import { isDishesResponse } from "src/utils/guards";
+import { fetchWithParams } from "src/utils/fetchWithParams";
 
 const getDishes = async (): Promise<Dish[]> => {
-  const response = await fetch(`${BACKEND_URL}/dishes`);
+  const response = await fetchWithParams(`${BACKEND_URL}/dishes`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch dishes");
@@ -28,7 +30,7 @@ const getDishes = async (): Promise<Dish[]> => {
 };
 
 const addDish = async (dish: NewDish): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/dishes`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
     method: "POST",
     body: JSON.stringify(dish),
   });
@@ -39,7 +41,7 @@ const addDish = async (dish: NewDish): Promise<void> => {
 };
 
 const updateDish = async (dish: Dish): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/dishes/${dish.id}`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
     method: "PUT",
     body: JSON.stringify(dish),
   });
@@ -50,8 +52,9 @@ const updateDish = async (dish: Dish): Promise<void> => {
 };
 
 const deleteDish = async (id: string): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/dishes/${id}`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
     method: "DELETE",
+    body: JSON.stringify({ id }),
   });
 
   if (!response.ok) {
@@ -59,10 +62,11 @@ const deleteDish = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetDishes = () =>
+export const useGetDishes = (options?: Partial<UseQueryOptions<Dish[]>>) =>
   useQuery({
     queryKey: [DISHES_GET_QUERY],
     queryFn: getDishes,
+    ...options,
   });
 
 export const useAddDish = (): UseMutationResult<void, Error, NewDish> => {
@@ -83,6 +87,11 @@ export const useAddDish = (): UseMutationResult<void, Error, NewDish> => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+    },
+    onError: (_, __, context) => {
+      if (context?.prevDishes) {
+        queryClient.setQueryData([DISHES_GET_QUERY], context.prevDishes);
+      }
     },
   });
 };
@@ -109,6 +118,11 @@ export const useUpdateDish = (): UseMutationResult<void, Error, Dish> => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
     },
+    onError: (_, __, context) => {
+      if (context?.prevDishes) {
+        queryClient.setQueryData([DISHES_GET_QUERY], context.prevDishes);
+      }
+    },
   });
 };
 
@@ -133,6 +147,11 @@ export const useDeleteDish = (): UseMutationResult<void, Error, string> => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+    },
+    onError: (_, __, context) => {
+      if (context?.prevDishes) {
+        queryClient.setQueryData([DISHES_GET_QUERY], context.prevDishes);
+      }
     },
   });
 };

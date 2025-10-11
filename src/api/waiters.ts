@@ -3,6 +3,7 @@ import {
   UseMutationResult,
   useQuery,
   useQueryClient,
+  UseQueryOptions,
 } from "@tanstack/react-query";
 import { NewWaiter, Waiter } from "src/types";
 import { BACKEND_URL } from "src/utils/constants";
@@ -14,9 +15,10 @@ import {
   WAITERS_DELETE_QUERY,
 } from "src/api/constants";
 import { isWaitersResponse } from "src/utils/guards";
+import { fetchWithParams } from "src/utils/fetchWithParams";
 
 const getWaiters = async (): Promise<Waiter[]> => {
-  const response = await fetch(`${BACKEND_URL}/waiters`);
+  const response = await fetchWithParams(`${BACKEND_URL}/waiters`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch waiters");
@@ -28,7 +30,7 @@ const getWaiters = async (): Promise<Waiter[]> => {
 };
 
 const addWaiter = async (waiter: NewWaiter): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/waiters`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
     method: "POST",
     body: JSON.stringify(waiter),
   });
@@ -39,7 +41,7 @@ const addWaiter = async (waiter: NewWaiter): Promise<void> => {
 };
 
 const updateWaiter = async (waiter: Waiter): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/waiters/${waiter.id}`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
     method: "PUT",
     body: JSON.stringify(waiter),
   });
@@ -50,8 +52,9 @@ const updateWaiter = async (waiter: Waiter): Promise<void> => {
 };
 
 const deleteWaiter = async (id: string): Promise<void> => {
-  const response = await fetch(`${BACKEND_URL}/waiters/${id}`, {
+  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
     method: "DELETE",
+    body: JSON.stringify({ id }),
   });
 
   if (!response.ok) {
@@ -59,10 +62,11 @@ const deleteWaiter = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetWaiters = () =>
+export const useGetWaiters = (options?: Partial<UseQueryOptions<Waiter[]>>) =>
   useQuery({
     queryKey: [WAITERS_GET_QUERY],
     queryFn: getWaiters,
+    ...options,
   });
 
 export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
@@ -83,6 +87,11 @@ export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+    },
+    onError: (_, __, context) => {
+      if (context?.prevWaiters) {
+        queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
+      }
     },
   });
 };
@@ -108,6 +117,11 @@ export const useUpdateWaiter = (): UseMutationResult<void, Error, Waiter> => {
 
       return { prevWaiters };
     },
+    onError: (_, __, context) => {
+      if (context?.prevWaiters) {
+        queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
+      }
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
     },
@@ -132,6 +146,11 @@ export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
       );
 
       return { prevWaiters };
+    },
+    onError: (_, __, context) => {
+      if (context?.prevWaiters) {
+        queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });

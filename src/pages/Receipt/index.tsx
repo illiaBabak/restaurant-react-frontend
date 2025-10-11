@@ -6,7 +6,7 @@ import { Dropdown } from "src/components/Dropdown";
 import { Waiter } from "src/types";
 import { Loader } from "src/components/Loader";
 import { useCreateBill } from "src/api/bills";
-import { GlobalContext } from "src/root";
+import { GlobalContext } from "src/contexts/contexts";
 
 export const Receipt = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);

@@ -11,7 +11,7 @@ import { Plus, X } from "lucide-react";
 import { Table } from "src/components/Table";
 import { OverlayModal } from "src/components/OverlayModal";
 import { FormInput } from "src/components/FormInput";
-import { GlobalContext } from "src/root";
+import { GlobalContext } from "src/contexts/contexts";
 import { Dropdown } from "src/components/Dropdown";
 import { DISHES_CATEGORIES } from "src/utils/constants";
 

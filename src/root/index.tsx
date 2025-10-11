@@ -1,20 +1,11 @@
-import { createContext, JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Receipt } from "src/pages/Receipt";
 import { Admin } from "src/pages/Admin";
 import { NotFound } from "src/pages/NotFound";
 import { AlertProps } from "src/types";
 import { Alert } from "src/components/Alert";
-
-type GlobalContextType = {
-  setAlertProps: (alertProps: AlertProps | null) => void;
-};
-
-export const GlobalContext = createContext<GlobalContextType>({
-  setAlertProps: () => {
-    throw new Error("Global context is not initalized!");
-  },
-});
+import { GlobalProvider } from "src/contexts/providers";
 
 export const App = (): JSX.Element => {
   const [alertProps, setAlertProps] = useState<AlertProps | null>(null);
@@ -44,7 +35,7 @@ export const App = (): JSX.Element => {
   }, [alertProps]);
 
   return (
-    <GlobalContext.Provider value={{ setAlertProps }}>
+    <GlobalProvider setAlertProps={setAlertProps}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/admin" />} />
@@ -62,6 +53,6 @@ export const App = (): JSX.Element => {
           />
         )}
       </BrowserRouter>
-    </GlobalContext.Provider>
+    </GlobalProvider>
   );
 };
