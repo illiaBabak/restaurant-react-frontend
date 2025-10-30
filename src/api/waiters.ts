@@ -1,11 +1,13 @@
 import {
   useMutation,
   UseMutationResult,
-  useQuery,
+  useInfiniteQuery,
   useQueryClient,
-  UseQueryOptions,
+  UseInfiniteQueryResult,
+  UseQueryResult,
+  useQuery,
 } from "@tanstack/react-query";
-import { NewWaiter, Waiter } from "src/types";
+import { NewWaiter, Waiter, PageData } from "src/types";
 import { BACKEND_URL } from "src/utils/constants";
 import {
   WAITERS_ADD_QUERY,
@@ -13,12 +15,29 @@ import {
   WAITERS_UPDATE_QUERY,
   WAITERS_MUTATION,
   WAITERS_DELETE_QUERY,
+  WAITERS_GET_ALL_QUERY,
 } from "src/api/constants";
-import { isWaitersResponse } from "src/utils/guards";
+import { isWaitersPageResponse, isWaitersResponse } from "src/utils/guards";
 import { fetchWithParams } from "src/utils/fetchWithParams";
 
-const getWaiters = async (): Promise<Waiter[]> => {
+const getWaitersByPage = async (): Promise<PageData<Waiter[]>> => {
   const response = await fetchWithParams(`${BACKEND_URL}/waiters`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch waiters");
+  }
+
+  const result = await response.json();
+
+  if (!isWaitersPageResponse(result)) {
+    throw new Error("Invalid response");
+  }
+
+  return result.data;
+};
+
+const getAllWaiters = async (): Promise<Waiter[]> => {
+  const response = await fetchWithParams(`${BACKEND_URL}/waiters/all`);
 
   if (!response.ok) {
     throw new Error("Failed to fetch waiters");
@@ -62,11 +81,29 @@ const deleteWaiter = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetWaiters = (options?: Partial<UseQueryOptions<Waiter[]>>) =>
-  useQuery({
+export const useGetWaitersByPage = (): UseInfiniteQueryResult<
+  { pages: PageData<Waiter>[] },
+  Error
+> =>
+  useInfiniteQuery({
     queryKey: [WAITERS_GET_QUERY],
-    queryFn: getWaiters,
-    ...options,
+    queryFn: getWaitersByPage,
+    initialPageParam: 1,
+    getNextPageParam: ({ currentPageNumber, totalPages }) => {
+      return currentPageNumber < totalPages ? currentPageNumber + 1 : undefined;
+    },
+    getPreviousPageParam: ({ currentPageNumber }) => {
+      return currentPageNumber > 1 ? currentPageNumber - 1 : undefined;
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+export const useGetAllWaiters = (): UseQueryResult<Waiter[], Error> =>
+  useQuery({
+    queryKey: [WAITERS_GET_ALL_QUERY],
+    queryFn: getAllWaiters,
   });
 
 export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
@@ -78,19 +115,38 @@ export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
     onMutate: (waiter) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
-      const prevWaiters =
-        queryClient.getQueryData<Waiter[]>([WAITERS_GET_QUERY]) ?? [];
+      const prevWaitersPages = queryClient.getQueryData<{
+        pages: PageData<Waiter>[];
+      }>([WAITERS_GET_QUERY]) ?? { pages: [] };
 
-      queryClient.setQueryData([WAITERS_GET_QUERY], [...prevWaiters, waiter]);
+      const newWaitersPages = prevWaitersPages?.pages?.map((page) => {
+        if (page.currentPageNumber === 1) {
+          return {
+            ...page,
+            pageData: [waiter, ...(page.pageData ?? [])],
+          };
+        }
 
-      return { prevWaiters };
+        return page;
+      });
+
+      queryClient.setQueryData([WAITERS_GET_QUERY], {
+        ...prevWaitersPages,
+        pages: newWaitersPages,
+      });
+
+      return { prevWaitersPages };
     },
     onSettled: () => {
+      queryClient.removeQueries({ queryKey: [WAITERS_GET_QUERY] });
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
     onError: (_, __, context) => {
-      if (context?.prevWaiters) {
-        queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
+      if (context?.prevWaitersPages) {
+        queryClient.setQueryData([WAITERS_GET_QUERY], {
+          pages: context.prevWaitersPages,
+        });
       }
     },
   });
@@ -105,15 +161,23 @@ export const useUpdateWaiter = (): UseMutationResult<void, Error, Waiter> => {
     onMutate: (editedWaiter) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
-      const prevWaiters =
-        queryClient.getQueryData<Waiter[]>([WAITERS_GET_QUERY]) ?? [];
+      const prevWaiters = queryClient.getQueryData<{
+        pages: PageData<Waiter>[];
+      }>([WAITERS_GET_QUERY]);
 
-      queryClient.setQueryData(
-        [WAITERS_GET_QUERY],
-        prevWaiters.map((waiter) =>
-          waiter.id === editedWaiter.id ? editedWaiter : waiter
-        )
-      );
+      const newWaitersPages = prevWaiters?.pages.map((page) => {
+        return {
+          ...page,
+          pageData: page.pageData.map((w) =>
+            w.id === editedWaiter.id ? editedWaiter : w
+          ),
+        };
+      });
+
+      queryClient.setQueryData([WAITERS_GET_QUERY], {
+        ...prevWaiters,
+        pages: newWaitersPages,
+      });
 
       return { prevWaiters };
     },
@@ -124,6 +188,7 @@ export const useUpdateWaiter = (): UseMutationResult<void, Error, Waiter> => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
   });
 };
@@ -137,13 +202,21 @@ export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
     onMutate: (id) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
-      const prevWaiters =
-        queryClient.getQueryData<Waiter[]>([WAITERS_GET_QUERY]) ?? [];
+      const prevWaiters = queryClient.getQueryData<{
+        pages: PageData<Waiter>[];
+      }>([WAITERS_GET_QUERY]);
 
-      queryClient.setQueryData(
-        [WAITERS_GET_QUERY],
-        prevWaiters.filter((waiter) => waiter.id !== id)
-      );
+      const newWaitersPages = prevWaiters?.pages.map((page) => {
+        return {
+          ...page,
+          pageData: page.pageData.filter((w) => w.id !== id),
+        };
+      });
+
+      queryClient.setQueryData([WAITERS_GET_QUERY], {
+        ...prevWaiters,
+        pages: newWaitersPages,
+      });
 
       return { prevWaiters };
     },
@@ -154,6 +227,7 @@ export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
   });
 };

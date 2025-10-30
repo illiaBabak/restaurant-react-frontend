@@ -1,4 +1,4 @@
-import { Waiter, Response, Dish } from "src/types";
+import { Waiter, Response, Dish, PageResponse } from "src/types";
 
 export const isString = (value: unknown): value is string =>
   typeof value === "string";
@@ -53,3 +53,37 @@ export const isDishes = (value: unknown): value is Dish[] =>
 
 export const isDishesResponse = (value: unknown): value is Response<Dish[]> =>
   isObject(value) && "data" in value && isDishes(value.data);
+
+export const isDishesPageResponse = (
+  value: unknown
+): value is PageResponse<Dish[]> =>
+  isObject(value) &&
+  "data" in value &&
+  isObject(value.data) &&
+  "totalPages" in value.data &&
+  isNumber(value.data.totalPages) &&
+  "currentPageNumber" in value.data &&
+  isNumber(value.data.currentPageNumber) &&
+  "pageSize" in value.data &&
+  isNumber(value.data.pageSize) &&
+  "totalCount" in value.data &&
+  isNumber(value.data.totalCount) &&
+  "pageData" in value.data &&
+  isDishes(value.data.pageData);
+
+export const isWaitersPageResponse = (
+  value: unknown
+): value is PageResponse<Waiter[]> =>
+  isObject(value) &&
+  "data" in value &&
+  isObject(value.data) &&
+  "totalPages" in value.data &&
+  isNumber(value.data.totalPages) &&
+  "currentPageNumber" in value.data &&
+  isNumber(value.data.currentPageNumber) &&
+  "pageSize" in value.data &&
+  isNumber(value.data.pageSize) &&
+  "totalCount" in value.data &&
+  isNumber(value.data.totalCount) &&
+  "pageData" in value.data &&
+  isWaiters(value.data.pageData);

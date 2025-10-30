@@ -23,18 +23,14 @@ export type Dish = DishBase & { id: string };
 
 export type NewDish = DishBase;
 
-type BillBase = {
-  created_at: string;
+export type Bill = {
+  createdAt: string;
   waiter_id: string;
   dishes: {
     dish_id: string;
     quantity: number;
   }[];
 };
-
-export type Bill = BillBase & { id: string };
-
-export type NewBill = BillBase;
 
 export type Response<T> = {
   data: T;
@@ -45,4 +41,18 @@ export type AlertProps = {
   text: string;
   type: "success" | "error";
   position: "top" | "bottom";
+};
+
+export type PageData<T> = {
+  currentPageNumber: number;
+  pageData: T[];
+  length: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
+export type PageResponse<T> = {
+  data: PageData<T>;
+  error: null;
 };

@@ -8,16 +8,17 @@ import {
 } from "./constants";
 import { BACKEND_URL } from "src/utils/constants";
 import {
+  useInfiniteQuery,
+  UseInfiniteQueryResult,
   useMutation,
   UseMutationResult,
-  useQuery,
   useQueryClient,
-  UseQueryOptions,
 } from "@tanstack/react-query";
-import { isDishesResponse } from "src/utils/guards";
+import { isDishesPageResponse } from "src/utils/guards";
 import { fetchWithParams } from "src/utils/fetchWithParams";
+import { PageData } from "src/types";
 
-const getDishes = async (): Promise<Dish[]> => {
+const getDishesByPage = async (): Promise<PageData<Dish[]>> => {
   const response = await fetchWithParams(`${BACKEND_URL}/dishes`);
 
   if (!response.ok) {
@@ -26,7 +27,11 @@ const getDishes = async (): Promise<Dish[]> => {
 
   const result = await response.json();
 
-  return isDishesResponse(result) ? result.data : [];
+  if (!isDishesPageResponse(result)) {
+    throw new Error("Invalid response");
+  }
+
+  return result.data;
 };
 
 const addDish = async (dish: NewDish): Promise<void> => {
@@ -62,11 +67,25 @@ const deleteDish = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetDishes = (options?: Partial<UseQueryOptions<Dish[]>>) =>
-  useQuery({
+export const useGetDishesByPage = (): UseInfiniteQueryResult<
+  {
+    pages: PageData<Dish>[];
+  },
+  Error
+> =>
+  useInfiniteQuery({
     queryKey: [DISHES_GET_QUERY],
-    queryFn: getDishes,
-    ...options,
+    queryFn: getDishesByPage,
+    initialPageParam: 1,
+    getNextPageParam: ({ currentPageNumber, totalPages }) => {
+      return currentPageNumber < totalPages ? currentPageNumber + 1 : undefined;
+    },
+    getPreviousPageParam: ({ currentPageNumber }) => {
+      return currentPageNumber > 1 ? currentPageNumber - 1 : undefined;
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    staleTime: 1000 * 60, // 1 minute
   });
 
 export const useAddDish = (): UseMutationResult<void, Error, NewDish> => {
@@ -78,19 +97,36 @@ export const useAddDish = (): UseMutationResult<void, Error, NewDish> => {
     onMutate: (dish) => {
       queryClient.cancelQueries({ queryKey: [DISHES_GET_QUERY] });
 
-      const prevDishes =
-        queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
+      const prevDishes = queryClient.getQueryData<{ pages: PageData<Dish>[] }>([
+        DISHES_GET_QUERY,
+      ]) ?? { pages: [] };
 
-      queryClient.setQueryData([DISHES_GET_QUERY], [...prevDishes, dish]);
+      const newDishesPages = prevDishes?.pages?.map((page) => {
+        if (page.currentPageNumber === 1) {
+          return {
+            ...page,
+            pageData: [dish, ...(page.pageData ?? [])],
+          };
+        }
+        return page;
+      });
+
+      queryClient.setQueryData([DISHES_GET_QUERY], {
+        ...prevDishes,
+        pages: newDishesPages,
+      });
 
       return { prevDishes };
     },
     onSettled: () => {
+      queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
       queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
     },
     onError: (_, __, context) => {
       if (context?.prevDishes) {
-        queryClient.setQueryData([DISHES_GET_QUERY], context.prevDishes);
+        queryClient.setQueryData([DISHES_GET_QUERY], {
+          pages: context.prevDishes,
+        });
       }
     },
   });
@@ -102,16 +138,26 @@ export const useUpdateDish = (): UseMutationResult<void, Error, Dish> => {
   return useMutation({
     mutationKey: [DISHES_MUTATION, DISHES_UPDATE_QUERY],
     mutationFn: updateDish,
-    onMutate: (dish) => {
+    onMutate: (editedDish) => {
       queryClient.cancelQueries({ queryKey: [DISHES_GET_QUERY] });
 
-      const prevDishes =
-        queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
+      const prevDishes = queryClient.getQueryData<{ pages: PageData<Dish>[] }>([
+        DISHES_GET_QUERY,
+      ]) ?? { pages: [] };
 
-      queryClient.setQueryData(
-        [DISHES_GET_QUERY],
-        prevDishes.map((d) => (d.id === dish.id ? dish : d))
-      );
+      const newDishesPages = prevDishes?.pages.map((page) => {
+        return {
+          ...page,
+          pageData: page.pageData.map((d) =>
+            d.id === editedDish.id ? editedDish : d
+          ),
+        };
+      });
+
+      queryClient.setQueryData([DISHES_GET_QUERY], {
+        ...prevDishes,
+        pages: newDishesPages,
+      });
 
       return { prevDishes };
     },
@@ -120,7 +166,9 @@ export const useUpdateDish = (): UseMutationResult<void, Error, Dish> => {
     },
     onError: (_, __, context) => {
       if (context?.prevDishes) {
-        queryClient.setQueryData([DISHES_GET_QUERY], context.prevDishes);
+        queryClient.setQueryData([DISHES_GET_QUERY], {
+          pages: context.prevDishes,
+        });
       }
     },
   });
@@ -135,13 +183,21 @@ export const useDeleteDish = (): UseMutationResult<void, Error, string> => {
     onMutate: (id) => {
       queryClient.cancelQueries({ queryKey: [DISHES_GET_QUERY] });
 
-      const prevDishes =
-        queryClient.getQueryData<Dish[]>([DISHES_GET_QUERY]) ?? [];
+      const prevDishes = queryClient.getQueryData<{ pages: PageData<Dish>[] }>([
+        DISHES_GET_QUERY,
+      ]);
 
-      queryClient.setQueryData(
-        [DISHES_GET_QUERY],
-        prevDishes.filter((d) => d.id !== id)
-      );
+      const newDishesPages = prevDishes?.pages.map((page) => {
+        return {
+          ...page,
+          pageData: page.pageData.filter((d) => d.id !== id),
+        };
+      });
+
+      queryClient.setQueryData([DISHES_GET_QUERY], {
+        ...prevDishes,
+        pages: newDishesPages,
+      });
 
       return { prevDishes };
     },

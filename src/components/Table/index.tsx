@@ -3,15 +3,18 @@ import {
   getCoreRowModel,
   useReactTable,
   flexRender,
-  getPaginationRowModel,
 } from "@tanstack/react-table";
-import { JSX } from "react";
+import { JSX, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 type Props<T> = {
   data: T[];
   columns: ColumnDef<T>[];
   isLoading: boolean;
   getClickedRow?: (element: T) => void;
+  pageCount: number;
+  fetchNextPage: () => void;
+  fetchPreviousPage: () => void;
 };
 
 export const Table = <T,>({
@@ -19,19 +22,34 @@ export const Table = <T,>({
   columns,
   isLoading,
   getClickedRow,
+  pageCount,
+  fetchNextPage,
+  fetchPreviousPage,
 }: Props<T>): JSX.Element => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = searchParams.get("page");
+
   const table = useReactTable({
     data,
     columns,
-    initialState: {
+    pageCount,
+    manualPagination: true,
+    state: {
       pagination: {
-        pageIndex: 0,
+        pageIndex: currentPage ? Number(currentPage) - 1 : 1,
         pageSize: 10,
       },
     },
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   });
+
+  useEffect(() => {
+    if (!currentPage)
+      setSearchParams({
+        page: "1",
+      });
+  }, [setSearchParams, currentPage]);
 
   return (
     <div className="w-full">
@@ -153,7 +171,15 @@ export const Table = <T,>({
             onClick={() => {
               if (!table.getCanPreviousPage()) return;
 
-              table.previousPage();
+              setSearchParams((prev) => {
+                prev.set(
+                  "page",
+                  (currentPage ? Number(currentPage) - 1 : 1).toString()
+                );
+                return prev;
+              });
+
+              fetchPreviousPage();
             }}
             className={`${
               table.getCanPreviousPage()
@@ -167,7 +193,15 @@ export const Table = <T,>({
             onClick={() => {
               if (!table.getCanNextPage()) return;
 
-              table.nextPage();
+              setSearchParams((prev) => {
+                prev.set(
+                  "page",
+                  (currentPage ? Number(currentPage) + 1 : 2).toString()
+                );
+                return prev;
+              });
+
+              fetchNextPage();
             }}
             className={`${
               table.getCanNextPage()

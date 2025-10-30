@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "src/utils/constants";
 import { capitalize } from "src/utils/capitalize";
 

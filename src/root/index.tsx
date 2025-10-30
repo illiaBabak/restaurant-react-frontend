@@ -1,5 +1,5 @@
 import { JSX, useEffect, useState } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Receipt } from "src/pages/Receipt";
 import { Admin } from "src/pages/Admin";
 import { NotFound } from "src/pages/NotFound";
@@ -36,23 +36,21 @@ export const App = (): JSX.Element => {
 
   return (
     <GlobalProvider setAlertProps={setAlertProps}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin" />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/receipt" element={<Receipt />} />
-          <Route path="/*" element={<NotFound />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Navigate to="/admin" />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/receipt" element={<Receipt />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
-        {alertProps && (
-          <Alert
-            {...alertProps}
-            onClose={() => setAlertProps(null)}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={startAlertTimer}
-          />
-        )}
-      </BrowserRouter>
+      {alertProps && (
+        <Alert
+          {...alertProps}
+          onClose={() => setAlertProps(null)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={startAlertTimer}
+        />
+      )}
     </GlobalProvider>
   );
 };

@@ -1,8 +1,8 @@
-import { JSX, useContext, useState } from "react";
+import { JSX, useContext, useMemo, useState } from "react";
 import {
   useAddDish,
   useDeleteDish,
-  useGetDishes,
+  useGetDishesByPage,
   useUpdateDish,
 } from "src/api/dishes";
 import { ColumnDef } from "@tanstack/react-table";
@@ -14,6 +14,7 @@ import { FormInput } from "src/components/FormInput";
 import { GlobalContext } from "src/contexts/contexts";
 import { Dropdown } from "src/components/Dropdown";
 import { DISHES_CATEGORIES } from "src/utils/constants";
+import { useSearchParams } from "react-router-dom";
 
 const dishesColumns: ColumnDef<Dish>[] = [
   {
@@ -44,7 +45,25 @@ const EMPTY_DISH_VALUES: NewDish = {
 export const DishesManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
-  const { data: dishes, isLoading: isLoadingDishes } = useGetDishes();
+  const [searchParams] = useSearchParams();
+
+  const {
+    data: dishesData,
+    isLoading: isLoadingDishes,
+    fetchNextPage,
+    fetchPreviousPage,
+    isFetchingNextPage,
+    isFetchingPreviousPage,
+  } = useGetDishesByPage();
+
+  const dishes = useMemo(() => {
+    const pageIndex = dishesData?.pages.findIndex(
+      (page) => page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+    );
+    return dishesData?.pages[pageIndex ?? 0]?.pageData ?? [];
+  }, [dishesData, searchParams]);
+
+  const pageCount = dishesData?.pages[0]?.totalPages ?? 0;
 
   const { mutateAsync: addDish } = useAddDish();
 
@@ -54,18 +73,31 @@ export const DishesManagment = (): JSX.Element => {
 
   const [shouldShowModal, setShouldShowModal] = useState(false);
 
+  const [newDish, setNewDish] = useState<NewDish>(EMPTY_DISH_VALUES);
+
   const [dishToEdit, setDishToEdit] = useState<Dish | null>(null);
 
-  const [newDish, setNewDish] = useState<NewDish>(EMPTY_DISH_VALUES);
+  const [originalDishToEdit, setOriginalDishToEdit] = useState<Dish | null>(
+    null
+  );
+
+  const isChangedDish =
+    JSON.stringify(originalDishToEdit) !== JSON.stringify(dishToEdit);
 
   const closeModal = () => {
     setShouldShowModal(false);
     setNewDish(EMPTY_DISH_VALUES);
     setDishToEdit(null);
+    setOriginalDishToEdit(null);
   };
 
   const handleCreateAndUpdateDish = async () => {
-    if (dishToEdit ? !dishToEdit.name : !newDish.name) return;
+    if (
+      dishToEdit
+        ? !dishToEdit.name
+        : !newDish.name || (dishToEdit && !isChangedDish)
+    )
+      return;
 
     if (dishToEdit ? dishToEdit.price <= 0 : newDish.price <= 0) {
       setAlertProps({
@@ -117,10 +149,36 @@ export const DishesManagment = (): JSX.Element => {
       <Table
         data={dishes ?? []}
         columns={dishesColumns}
-        isLoading={isLoadingDishes}
+        isLoading={
+          isLoadingDishes || isFetchingNextPage || isFetchingPreviousPage
+        }
         getClickedRow={(dish) => {
+          setOriginalDishToEdit(dish);
           setDishToEdit(dish);
           setShouldShowModal(true);
+        }}
+        pageCount={pageCount}
+        fetchNextPage={() => {
+          const nextPageIndex =
+            (dishesData?.pages.findIndex(
+              (page) =>
+                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+            ) ?? 0) + 1;
+
+          if (dishesData?.pages?.[nextPageIndex]?.pageData?.length) return;
+
+          fetchNextPage();
+        }}
+        fetchPreviousPage={() => {
+          const previousPageIndex =
+            (dishesData?.pages.findIndex(
+              (page) =>
+                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+            ) ?? 0) - 1;
+
+          if (dishesData?.pages?.[previousPageIndex]?.pageData?.length) return;
+
+          fetchPreviousPage();
         }}
       />
 
@@ -207,7 +265,7 @@ export const DishesManagment = (): JSX.Element => {
                   <button
                     className={`${
                       (
-                        dishToEdit
+                        isChangedDish && dishToEdit
                           ? dishToEdit.name.length
                           : newDish.name.length
                       )

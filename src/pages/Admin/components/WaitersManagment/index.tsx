@@ -1,10 +1,10 @@
-import { JSX, useContext, useState } from "react";
+import { JSX, useContext, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { NewWaiter, Waiter } from "src/types";
 import {
   useAddWaiter,
   useDeleteWaiter,
-  useGetWaiters,
+  useGetWaitersByPage,
   useUpdateWaiter,
 } from "src/api/waiters";
 import { Plus, X } from "lucide-react";
@@ -14,6 +14,7 @@ import { isValidEmail } from "src/utils/isValidEmail";
 import { isValidPhoneNumber } from "src/utils/isValidPhoneNumber";
 import { GlobalContext } from "src/contexts/contexts";
 import { FormInput } from "src/components/FormInput";
+import { useSearchParams } from "react-router-dom";
 
 const waitersColumns: ColumnDef<Waiter>[] = [
   {
@@ -49,7 +50,25 @@ const EMPTY_WAITER_VALUES: NewWaiter = {
 export const WaitersManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
-  const { data: waiters, isLoading: isLoadingWaiters } = useGetWaiters();
+  const [searchParams] = useSearchParams();
+
+  const {
+    data: waitersData,
+    isLoading: isLoadingWaiters,
+    fetchNextPage,
+    fetchPreviousPage,
+    isFetchingNextPage,
+    isFetchingPreviousPage,
+  } = useGetWaitersByPage();
+
+  const waiters = useMemo(() => {
+    const pageIndex = waitersData?.pages.findIndex(
+      (page) => page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+    );
+    return waitersData?.pages[pageIndex ?? 0]?.pageData ?? [];
+  }, [waitersData, searchParams]);
+
+  const pageCount = waitersData?.pages[0]?.totalPages ?? 0;
 
   const { mutateAsync: addWaiter } = useAddWaiter();
 
@@ -59,9 +78,16 @@ export const WaitersManagment = (): JSX.Element => {
 
   const [shouldShowModal, setShouldShowModal] = useState(false);
 
+  const [newWaiter, setNewWaiter] = useState<NewWaiter>(EMPTY_WAITER_VALUES);
+
   const [waiterToEdit, setWaiterToEdit] = useState<Waiter | null>(null);
 
-  const [newWaiter, setNewWaiter] = useState<NewWaiter>(EMPTY_WAITER_VALUES);
+  const [originalWaiterToEdit, setOriginalWaiterToEdit] =
+    useState<Waiter | null>(null);
+
+  // check if waiter has changed to avoid PUT request if nothing has changed
+  const isChangedWaiter =
+    JSON.stringify(originalWaiterToEdit) !== JSON.stringify(waiterToEdit);
 
   const allFieldsAreFilled = Object.values(
     waiterToEdit ? waiterToEdit : newWaiter
@@ -71,10 +97,11 @@ export const WaitersManagment = (): JSX.Element => {
     setShouldShowModal(false);
     setNewWaiter(EMPTY_WAITER_VALUES);
     setWaiterToEdit(null);
+    setOriginalWaiterToEdit(null);
   };
 
   const handleCreateAndUpdateWaiter = async () => {
-    if (!allFieldsAreFilled) return;
+    if (!allFieldsAreFilled || (waiterToEdit && !isChangedWaiter)) return;
 
     if (!isValidEmail(waiterToEdit ? waiterToEdit.email : newWaiter.email)) {
       setAlertProps({
@@ -129,12 +156,38 @@ export const WaitersManagment = (): JSX.Element => {
       </div>
 
       <Table
-        data={waiters ?? []}
+        data={waiters}
         columns={waitersColumns}
-        isLoading={isLoadingWaiters}
+        isLoading={
+          isLoadingWaiters || isFetchingNextPage || isFetchingPreviousPage
+        }
         getClickedRow={(waiter) => {
+          setOriginalWaiterToEdit(waiter);
           setWaiterToEdit(waiter);
           setShouldShowModal(true);
+        }}
+        pageCount={pageCount}
+        fetchNextPage={() => {
+          const nextPageIndex =
+            (waitersData?.pages.findIndex(
+              (page) =>
+                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+            ) ?? 0) + 1;
+
+          if (waitersData?.pages?.[nextPageIndex]?.pageData?.length) return;
+
+          fetchNextPage();
+        }}
+        fetchPreviousPage={() => {
+          const previousPageIndex =
+            (waitersData?.pages.findIndex(
+              (page) =>
+                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+            ) ?? 0) - 1;
+
+          if (waitersData?.pages?.[previousPageIndex]?.pageData?.length) return;
+
+          fetchPreviousPage();
         }}
       />
 
@@ -231,7 +284,7 @@ export const WaitersManagment = (): JSX.Element => {
                 <div className="flex items-center justify-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-[80%]">
                   <button
                     className={`${
-                      allFieldsAreFilled
+                      allFieldsAreFilled && isChangedWaiter
                         ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
                         : "bg-gray-500/50 cursor-not-allowed"
                     } w-full text-white rounded-md p-2 sm:p-2.5 text-sm sm:text-base`}

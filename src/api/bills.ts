@@ -1,10 +1,10 @@
 import { BACKEND_URL } from "src/utils/constants";
-import { NewBill } from "src/types";
+import { Bill } from "src/types";
 import { BILLS_CREATE_QUERY } from "./constants";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { fetchWithParams } from "src/utils/fetchWithParams";
 
-const createBill = async (bill: NewBill): Promise<Blob> => {
+const createBill = async (bill: Bill): Promise<Blob> => {
   const response = await fetchWithParams(`${BACKEND_URL}/bills`, {
     method: "POST",
     body: JSON.stringify(bill),
@@ -23,7 +23,7 @@ const createBill = async (bill: NewBill): Promise<Blob> => {
   return blob;
 };
 
-export const useCreateBill = (): UseMutationResult<Blob, Error, NewBill> => {
+export const useCreateBill = (): UseMutationResult<Blob, Error, Bill> => {
   return useMutation({
     mutationKey: [BILLS_CREATE_QUERY],
     mutationFn: createBill,

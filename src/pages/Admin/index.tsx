@@ -3,7 +3,7 @@ import { Header } from "src/components/Header";
 import { SideBar } from "src/components/SideBar";
 import { WaitersManagment } from "src/pages/Admin/components/WaitersManagment";
 import { DishesManagment } from "src/pages/Admin/components/DishesManagment";
-import { useSearchParams } from "react-router";
+import { useSearchParams } from "react-router-dom";
 
 export const Admin = (): JSX.Element => {
   const [searchParams] = useSearchParams();

@@ -1,19 +1,74 @@
-import { JSX, useContext, useEffect, useState } from "react";
+import {
+  JSX,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import { Header } from "src/components/Header";
-import { useGetDishes } from "src/api/dishes";
-import { useGetWaiters } from "src/api/waiters";
+import { useGetDishesByPage } from "src/api/dishes";
+import { useGetAllWaiters } from "src/api/waiters";
 import { Dropdown } from "src/components/Dropdown";
 import { Waiter } from "src/types";
 import { Loader } from "src/components/Loader";
 import { useCreateBill } from "src/api/bills";
 import { GlobalContext } from "src/contexts/contexts";
+import { useSearchParams } from "react-router-dom";
+
+const OBSERVER_OPTIONS = {
+  root: null,
+  rootMargin: "0px",
+  threshold: 0,
+};
 
 export const Receipt = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
-  const { data: dishes, isLoading: isLoadingDishes } = useGetDishes();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const { data: waiters, isLoading: isLoadingWaiters } = useGetWaiters();
+  const init = useRef(true);
+
+  // fix ?page=N to ?page=1 after reload
+  useEffect(() => {
+    if (!init.current) return;
+    init.current = false;
+
+    setSearchParams({ page: "1" }, { replace: true });
+  }, [setSearchParams]);
+
+  const {
+    data: dishesData,
+    isLoading: isLoadingDishes,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useGetDishesByPage();
+
+  // set page to last page after fetching all pages on table route
+  useLayoutEffect(() => {
+    if (!init.current) return;
+
+    if (dishesData?.pages.length) {
+      init.current = false;
+      const lastPageIndex = dishesData?.pages.length;
+
+      setSearchParams(
+        (prev) => {
+          prev.set("page", lastPageIndex.toString());
+          return prev;
+        },
+        { replace: true }
+      );
+    }
+  }, [dishesData, setSearchParams]);
+
+  const dishes = useMemo(
+    () => dishesData?.pages.flatMap((page) => page.pageData) ?? [],
+    [dishesData]
+  );
+
+  const { data: waiters, isLoading: isLoadingWaiters } = useGetAllWaiters();
 
   const { mutateAsync: createBill } = useCreateBill();
 
@@ -41,7 +96,7 @@ export const Receipt = (): JSX.Element => {
     }
 
     const blob = await createBill({
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       waiter_id: selectedWaiter?.id ?? "",
       dishes: selectedDishes,
     });
@@ -52,6 +107,33 @@ export const Receipt = (): JSX.Element => {
     link.download = "bill.csv";
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  const handleIntersect = (el: HTMLElement | null) => {
+    if (observer.current) {
+      observer.current.disconnect();
+      observer.current = null;
+    }
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+
+      const total = dishesData?.pages[0]?.totalPages ?? 0;
+      const current = Number(searchParams.get("page") ?? 1);
+
+      if (current < total) {
+        setSearchParams((prev) => {
+          prev.set("page", (Number(prev.get("page") ?? 1) + 1).toString());
+          return prev;
+        });
+
+        fetchNextPage();
+      }
+    }, OBSERVER_OPTIONS);
+
+    if (el) observer.current.observe(el);
   };
 
   return (
@@ -154,7 +236,13 @@ export const Receipt = (): JSX.Element => {
           ))}
         </div>
 
-        {isLoadingDishes || (isLoadingWaiters && <Loader />)}
+        {!isFetchingNextPage && !isLoadingDishes && (
+          <div ref={handleIntersect} />
+        )}
+
+        {(isLoadingDishes || isLoadingWaiters || isFetchingNextPage) && (
+          <Loader />
+        )}
       </div>
     </div>
   );
