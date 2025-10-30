@@ -186,7 +186,7 @@ export const DishesManagment = (): JSX.Element => {
         <OverlayModal onClose={closeModal}>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white p-4 sm:p-6 rounded-[0px] sm:rounded-lg cursor-default w-full h-full sm:w-[90%] sm:h-[85%] md:w-[75%] md:h-[75%] lg:w-[60%] lg:h-[70%] xl:w-[50%] xl:h-[65%] max-w-2xl overflow-y-auto"
+            className="bg-white p-4 sm:p-6 rounded-[0px] sm:rounded-lg cursor-default w-full h-full sm:w-[90%] sm:h-[90%] md:w-[75%] lg:w-[60%] xl:h-[75%] xl:w-[50%] max-w-2xl overflow-y-auto z-[40]"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-4">

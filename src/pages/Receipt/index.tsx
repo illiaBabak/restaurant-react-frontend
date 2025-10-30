@@ -165,7 +165,7 @@ export const Receipt = (): JSX.Element => {
         <div className="grid lg:grid-cols-5 grid-cols-2 gap-6 mt-1">
           {dishes?.map((dish) => (
             <div
-              className="bg-violet-500 text-white md:p-3 p-1 rounded-md flex flex-col gap-2 text-center justify-center md:justify-start items-center md:h-[200px] h-[160px]"
+              className="bg-violet-500 overflow-hidden text-white md:p-3 p-1 rounded-md flex flex-col gap-2 text-center justify-center md:justify-start items-center md:h-[200px] h-[160px]"
               key={`${dish.id}-${dish.name}-dish`}
             >
               <h2 className="text-base md:text-xl font-bold">{dish.name}</h2>

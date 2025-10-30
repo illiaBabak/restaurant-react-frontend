@@ -195,7 +195,7 @@ export const WaitersManagment = (): JSX.Element => {
         <OverlayModal onClose={closeModal}>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white p-4 sm:p-6 rounded-[0px] sm:rounded-lg cursor-default w-full h-full sm:w-[90%] sm:h-[90%] md:w-[75%] md:h-[85%] lg:w-[60%] lg:h-[85%] xl:w-[50%] max-w-2xl overflow-y-auto"
+            className="bg-white p-4 sm:p-6 rounded-[0px] sm:rounded-lg cursor-default w-full h-full sm:w-[90%] sm:h-[90%] md:w-[75%] lg:w-[60%] xl:w-[50%] max-w-2xl overflow-y-auto"
           >
             <div className="flex justify-between items-center">
               <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-4">
