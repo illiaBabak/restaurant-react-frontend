@@ -142,7 +142,7 @@ export const WaitersManagment = (): JSX.Element => {
 
   return (
     <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
-      <div className="flex justify-between items-center flex-row my-2">
+      <div className="flex justify-between items-center flex-row h-[65px]">
         <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-3 sm:mb-4">
           Waiters
         </h2>

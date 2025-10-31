@@ -16,11 +16,7 @@ export const SideBar = (): JSX.Element => {
   const selectedCategory = searchParams.get("table-category") ?? "Waiters";
 
   const changeCategory = (category: string) => {
-    setSearchParams((prev) => {
-      prev.set("table-category", category);
-      prev.set("page", "1");
-      return prev;
-    });
+    setSearchParams({ "table-category": category, page: "1" });
   };
 
   return (

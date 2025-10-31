@@ -1,4 +1,4 @@
-import { JSX, useContext, useMemo, useState } from "react";
+import { JSX, useContext, useEffect, useMemo, useState } from "react";
 import {
   useAddDish,
   useDeleteDish,
@@ -13,8 +13,11 @@ import { OverlayModal } from "src/components/OverlayModal";
 import { FormInput } from "src/components/FormInput";
 import { GlobalContext } from "src/contexts/contexts";
 import { Dropdown } from "src/components/Dropdown";
-import { DISHES_CATEGORIES } from "src/utils/constants";
+import { DISHES_CATEGORIES, PRICE_FILTERS } from "src/utils/constants";
 import { useSearchParams } from "react-router-dom";
+import { removeUnderlines } from "src/utils/removeUnderlines";
+import { useQueryClient } from "@tanstack/react-query";
+import { DISHES_GET_QUERY } from "src/api/constants";
 
 const dishesColumns: ColumnDef<Dish>[] = [
   {
@@ -45,7 +48,7 @@ const EMPTY_DISH_VALUES: NewDish = {
 export const DishesManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     data: dishesData,
@@ -55,6 +58,8 @@ export const DishesManagment = (): JSX.Element => {
     isFetchingNextPage,
     isFetchingPreviousPage,
   } = useGetDishesByPage();
+
+  const queryClient = useQueryClient();
 
   const dishes = useMemo(() => {
     const pageIndex = dishesData?.pages.findIndex(
@@ -80,6 +85,29 @@ export const DishesManagment = (): JSX.Element => {
   const [originalDishToEdit, setOriginalDishToEdit] = useState<Dish | null>(
     null
   );
+
+  useEffect(() => {
+    setSearchParams((prev) => {
+      if (!searchParams.get("price")) prev.set("price", "all");
+
+      if (!searchParams.get("category")) prev.set("category", "all");
+
+      return prev;
+    });
+  }, [setSearchParams, searchParams]);
+
+  const [selectedPrice, setSelectedPrice] = useState<
+    keyof typeof PRICE_FILTERS
+  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
+
+  const [selectedCategory, setSelectedCategory] = useState<
+    (typeof DISHES_CATEGORIES)[number]
+  >(searchParams.get("category") ?? "all");
+
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
+    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+  }, [selectedPrice, selectedCategory, queryClient]);
 
   const isChangedDish =
     JSON.stringify(originalDishToEdit) !== JSON.stringify(dishToEdit);
@@ -133,10 +161,45 @@ export const DishesManagment = (): JSX.Element => {
 
   return (
     <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
-      <div className="flex justify-between items-center flex-row my-2">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-3 sm:mb-4">
-          Dishes
-        </h2>
+      <div className="flex justify-between items-center flex-row h-[65px]">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-wide">
+            Dishes
+          </h2>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1 ms-4">
+            <label className="text-sm sm:text-base">Category</label>
+            <Dropdown
+              options={DISHES_CATEGORIES}
+              selectedOption={selectedCategory}
+              setSelectedOption={(option) => {
+                setSelectedCategory(option);
+                setSearchParams((prev) => {
+                  prev.set("category", option);
+                  return prev;
+                });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1 ms-4">
+            <label className="text-sm sm:text-base">Price</label>
+            <Dropdown
+              options={Object.keys(PRICE_FILTERS)}
+              selectedOption={removeUnderlines(selectedPrice)}
+              setSelectedOption={(option) => {
+                setSelectedPrice(option as keyof typeof PRICE_FILTERS);
+                setSearchParams((prev) => {
+                  prev.set(
+                    "price",
+                    PRICE_FILTERS[option as keyof typeof PRICE_FILTERS]
+                  );
+                  return prev;
+                });
+              }}
+            />
+          </div>
+        </div>
 
         <button
           onClick={() => setShouldShowModal(true)}
