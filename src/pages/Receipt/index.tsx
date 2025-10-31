@@ -16,6 +16,11 @@ import { Loader } from "src/components/Loader";
 import { useCreateBill } from "src/api/bills";
 import { GlobalContext } from "src/contexts/contexts";
 import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { DISHES_GET_QUERY } from "src/api/constants";
+import { PRICE_FILTERS } from "src/utils/constants";
+import { DISHES_CATEGORIES } from "src/utils/constants";
+import { removeUnderlines } from "src/utils/removeUnderlines";
 
 const OBSERVER_OPTIONS = {
   root: null,
@@ -28,6 +33,8 @@ export const Receipt = (): JSX.Element => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const queryClient = useQueryClient();
+
   const init = useRef(true);
 
   // fix ?page=N to ?page=1 after reload
@@ -35,8 +42,19 @@ export const Receipt = (): JSX.Element => {
     if (!init.current) return;
     init.current = false;
 
-    setSearchParams({ page: "1" }, { replace: true });
-  }, [setSearchParams]);
+    setSearchParams(
+      (prev) => {
+        prev.set("page", "1");
+
+        if (!searchParams.get("price")) prev.set("price", "all");
+
+        if (!searchParams.get("category")) prev.set("category", "all");
+
+        return prev;
+      },
+      { replace: true }
+    );
+  }, [setSearchParams, searchParams]);
 
   const {
     data: dishesData,
@@ -84,6 +102,19 @@ export const Receipt = (): JSX.Element => {
   useEffect(() => {
     if (waiters?.length) setSelectedWaiter(waiters[0]);
   }, [waiters]);
+
+  const [selectedPrice, setSelectedPrice] = useState<
+    keyof typeof PRICE_FILTERS
+  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
+
+  const [selectedCategory, setSelectedCategory] = useState<
+    (typeof DISHES_CATEGORIES)[number]
+  >(searchParams.get("category") ?? "all");
+
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
+    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+  }, [selectedPrice, selectedCategory, queryClient]);
 
   const handleCreateBill = async () => {
     if (!selectedDishes.length) {
@@ -142,16 +173,53 @@ export const Receipt = (): JSX.Element => {
       <div className="flex p-4 flex-col gap-4 w-full">
         <div className="flex sm:flex-row flex-col items-center justify-between w-full mt-1">
           <div className="flex flex-row gap-4 items-center">
-            <h2>Waiter</h2>
-            <Dropdown
-              options={waiters?.map((waiter) => waiter.name) ?? []}
-              selectedOption={selectedWaiter?.name ?? ""}
-              setSelectedOption={(option) => {
-                setSelectedWaiter(
-                  waiters?.find((waiter) => waiter.name === option) ?? null
-                );
-              }}
-            />
+            <div className="flex flex-row gap-4 items-center">
+              <h2>Waiter</h2>
+              <Dropdown
+                options={waiters?.map((waiter) => waiter.name) ?? []}
+                selectedOption={selectedWaiter?.name ?? ""}
+                setSelectedOption={(option) => {
+                  setSelectedWaiter(
+                    waiters?.find((waiter) => waiter.name === option) ?? null
+                  );
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 ms-4">
+              <label className="text-sm sm:text-base">Category</label>
+              <Dropdown
+                options={DISHES_CATEGORIES}
+                selectedOption={selectedCategory}
+                setSelectedOption={(option) => {
+                  setSelectedCategory(option);
+                  setSearchParams((prev) => {
+                    prev.set("category", option);
+                    prev.set("page", "1");
+                    return prev;
+                  });
+                }}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 ms-4">
+              <label className="text-sm sm:text-base">Price</label>
+              <Dropdown
+                options={Object.keys(PRICE_FILTERS)}
+                selectedOption={removeUnderlines(selectedPrice)}
+                setSelectedOption={(option) => {
+                  setSelectedPrice(option as keyof typeof PRICE_FILTERS);
+                  setSearchParams((prev) => {
+                    prev.set(
+                      "price",
+                      PRICE_FILTERS[option as keyof typeof PRICE_FILTERS]
+                    );
+                    prev.set("page", "1");
+                    return prev;
+                  });
+                }}
+              />
+            </div>
           </div>
 
           <button
