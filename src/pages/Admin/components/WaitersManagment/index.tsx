@@ -1,4 +1,4 @@
-import { JSX, useContext, useMemo, useState } from "react";
+import { JSX, useContext, useEffect, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { NewWaiter, Waiter } from "src/types";
 import {
@@ -15,6 +15,9 @@ import { isValidPhoneNumber } from "src/utils/isValidPhoneNumber";
 import { GlobalContext } from "src/contexts/contexts";
 import { FormInput } from "src/components/FormInput";
 import { useSearchParams } from "react-router-dom";
+import { Search } from "src/components/Search";
+import { WAITERS_GET_QUERY } from "src/api/constants";
+import { useQueryClient } from "@tanstack/react-query";
 
 const waitersColumns: ColumnDef<Waiter>[] = [
   {
@@ -52,6 +55,8 @@ export const WaitersManagment = (): JSX.Element => {
 
   const [searchParams] = useSearchParams();
 
+  const queryClient = useQueryClient();
+
   const {
     data: waitersData,
     isLoading: isLoadingWaiters,
@@ -88,6 +93,13 @@ export const WaitersManagment = (): JSX.Element => {
   // check if waiter has changed to avoid PUT request if nothing has changed
   const isChangedWaiter =
     JSON.stringify(originalWaiterToEdit) !== JSON.stringify(waiterToEdit);
+
+  const searchQuery = searchParams.get("search") ?? "";
+
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: [WAITERS_GET_QUERY] });
+    queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+  }, [searchQuery, queryClient]);
 
   const allFieldsAreFilled = Object.values(
     waiterToEdit ? waiterToEdit : newWaiter
@@ -143,9 +155,13 @@ export const WaitersManagment = (): JSX.Element => {
   return (
     <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
       <div className="flex justify-between items-center flex-row h-[65px]">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-wide mb-3 sm:mb-4">
-          Waiters
-        </h2>
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-wide">
+            Waiters
+          </h2>
+
+          <Search />
+        </div>
 
         <button
           onClick={() => setShouldShowModal(true)}

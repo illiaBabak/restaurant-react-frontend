@@ -8,6 +8,7 @@ import {
 import { ColumnDef } from "@tanstack/react-table";
 import { Dish, NewDish } from "src/types";
 import { Plus, X } from "lucide-react";
+import { Search } from "src/components/Search";
 import { Table } from "src/components/Table";
 import { OverlayModal } from "src/components/OverlayModal";
 import { FormInput } from "src/components/FormInput";
@@ -85,6 +86,13 @@ export const DishesManagment = (): JSX.Element => {
   const [originalDishToEdit, setOriginalDishToEdit] = useState<Dish | null>(
     null
   );
+
+  const searchQuery = searchParams.get("search") ?? "";
+
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
+    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
+  }, [searchQuery, queryClient]);
 
   useEffect(() => {
     setSearchParams((prev) => {
@@ -167,7 +175,9 @@ export const DishesManagment = (): JSX.Element => {
             Dishes
           </h2>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1 ms-4">
+          <Search />
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 ms-4">
             <label className="text-sm sm:text-base">Category</label>
             <Dropdown
               options={DISHES_CATEGORIES}
@@ -182,7 +192,7 @@ export const DishesManagment = (): JSX.Element => {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1 ms-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 ms-4">
             <label className="text-sm sm:text-base">Price</label>
             <Dropdown
               options={Object.keys(PRICE_FILTERS)}
