@@ -4,7 +4,7 @@ import {
   useReactTable,
   flexRender,
 } from "@tanstack/react-table";
-import { JSX, useEffect } from "react";
+import { JSX } from "react";
 import { useSearchParams } from "react-router-dom";
 
 type Props<T> = {
@@ -26,9 +26,9 @@ export const Table = <T,>({
   fetchNextPage,
   fetchPreviousPage,
 }: Props<T>): JSX.Element => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const currentPage = searchParams.get("page");
+  const currentPage = Number(searchParams.get("page") ?? 1);
 
   const table = useReactTable({
     data,
@@ -37,19 +37,12 @@ export const Table = <T,>({
     manualPagination: true,
     state: {
       pagination: {
-        pageIndex: currentPage ? Number(currentPage) - 1 : 1,
+        pageIndex: currentPage - 1,
         pageSize: 10,
       },
     },
     getCoreRowModel: getCoreRowModel(),
   });
-
-  useEffect(() => {
-    if (!currentPage)
-      setSearchParams({
-        page: "1",
-      });
-  }, [setSearchParams, currentPage]);
 
   return (
     <div className="w-full">
@@ -171,14 +164,6 @@ export const Table = <T,>({
             onClick={() => {
               if (!table.getCanPreviousPage()) return;
 
-              setSearchParams((prev) => {
-                prev.set(
-                  "page",
-                  (currentPage ? Number(currentPage) - 1 : 1).toString()
-                );
-                return prev;
-              });
-
               fetchPreviousPage();
             }}
             className={`${
@@ -192,14 +177,6 @@ export const Table = <T,>({
           <button
             onClick={() => {
               if (!table.getCanNextPage()) return;
-
-              setSearchParams((prev) => {
-                prev.set(
-                  "page",
-                  (currentPage ? Number(currentPage) + 1 : 2).toString()
-                );
-                return prev;
-              });
 
               fetchNextPage();
             }}

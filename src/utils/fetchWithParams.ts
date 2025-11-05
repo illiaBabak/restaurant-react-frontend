@@ -1,18 +1,23 @@
-type RequestInit = {
-  method: "GET" | "POST" | "PUT" | "DELETE";
-  body: string;
+export type FetchWithParamsProps = {
+  apiUrl: string;
+  url: string;
+  urlParams?: URLSearchParams;
   headers?: Record<string, string>;
+  method?: "GET" | "POST" | "PUT" | "DELETE";
+  body?: string;
 };
 
-export const fetchWithParams = async (
-  url: string,
-  requestInit?: RequestInit
-) => {
-  const params = new URLSearchParams(window.location.search).toString();
-
+export const fetchWithParams = async ({
+  apiUrl,
+  url,
+  urlParams,
+  headers,
+  body,
+  method = "GET",
+}: FetchWithParamsProps) => {
   const response = await fetch(
-    `${url}?${params}`,
-    requestInit ?? { method: "GET" }
+    `${apiUrl}/${url}${urlParams ? `?${urlParams.toString()}` : ""}`,
+    { method, body, headers }
   );
 
   return response;

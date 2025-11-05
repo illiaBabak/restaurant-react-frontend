@@ -20,8 +20,19 @@ import {
 import { isWaitersPageResponse, isWaitersResponse } from "src/utils/guards";
 import { fetchWithParams } from "src/utils/fetchWithParams";
 
-const getWaitersByPage = async (): Promise<PageData<Waiter[]>> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/waiters`);
+const getWaitersByPage = async (
+  pageParam: number,
+  search?: string
+): Promise<PageData<Waiter[]>> => {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "waiter",
+    method: "GET",
+    urlParams: new URLSearchParams({
+      page: pageParam.toString(),
+      search: search ?? "",
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch waiters");
@@ -37,7 +48,11 @@ const getWaitersByPage = async (): Promise<PageData<Waiter[]>> => {
 };
 
 const getAllWaiters = async (): Promise<Waiter[]> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/waiters/all`);
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "waiter/all",
+    method: "GET",
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch waiters");
@@ -49,7 +64,9 @@ const getAllWaiters = async (): Promise<Waiter[]> => {
 };
 
 const addWaiter = async (waiter: NewWaiter): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "waiter",
     method: "POST",
     body: JSON.stringify(waiter),
   });
@@ -60,7 +77,9 @@ const addWaiter = async (waiter: NewWaiter): Promise<void> => {
 };
 
 const updateWaiter = async (waiter: Waiter): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "waiter",
     method: "PUT",
     body: JSON.stringify(waiter),
   });
@@ -71,7 +90,9 @@ const updateWaiter = async (waiter: Waiter): Promise<void> => {
 };
 
 const deleteWaiter = async (id: string): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/waiters`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "waiter",
     method: "DELETE",
     body: JSON.stringify({ id }),
   });
@@ -81,14 +102,14 @@ const deleteWaiter = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetWaitersByPage = (): UseInfiniteQueryResult<
-  { pages: PageData<Waiter>[] },
-  Error
-> =>
+export const useGetWaitersByPage = (
+  initialPage: number,
+  search?: string
+): UseInfiniteQueryResult<{ pages: PageData<Waiter>[] }, Error> =>
   useInfiniteQuery({
-    queryKey: [WAITERS_GET_QUERY],
-    queryFn: getWaitersByPage,
-    initialPageParam: 1,
+    queryKey: [WAITERS_GET_QUERY, search],
+    queryFn: ({ pageParam }) => getWaitersByPage(pageParam, search),
+    initialPageParam: initialPage || 1,
     getNextPageParam: ({ currentPageNumber, totalPages }) => {
       return currentPageNumber < totalPages ? currentPageNumber + 1 : undefined;
     },

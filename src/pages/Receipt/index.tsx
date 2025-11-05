@@ -1,12 +1,4 @@
-import {
-  JSX,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  useLayoutEffect,
-} from "react";
+import { JSX, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { Header } from "src/components/Header";
 import { useGetDishesByPage } from "src/api/dishes";
 import { useGetAllWaiters } from "src/api/waiters";
@@ -16,8 +8,6 @@ import { Loader } from "src/components/Loader";
 import { useCreateBill } from "src/api/bills";
 import { GlobalContext } from "src/contexts/contexts";
 import { useSearchParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { DISHES_GET_QUERY } from "src/api/constants";
 import { PRICE_FILTERS } from "src/utils/constants";
 import { DISHES_CATEGORIES } from "src/utils/constants";
 import { removeUnderlines } from "src/utils/removeUnderlines";
@@ -33,62 +23,13 @@ export const Receipt = (): JSX.Element => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const queryClient = useQueryClient();
+  const [selectedPrice, setSelectedPrice] = useState<
+    keyof typeof PRICE_FILTERS
+  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
 
-  const init = useRef(true);
-
-  // fix ?page=N to ?page=1 after reload
-  useEffect(() => {
-    if (!init.current) return;
-    init.current = false;
-
-    setSearchParams(
-      (prev) => {
-        prev.set("page", "1");
-
-        if (!searchParams.get("price")) prev.set("price", "all");
-
-        if (!searchParams.get("category")) prev.set("category", "all");
-
-        return prev;
-      },
-      { replace: true }
-    );
-  }, [setSearchParams, searchParams]);
-
-  const {
-    data: dishesData,
-    isLoading: isLoadingDishes,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useGetDishesByPage();
-
-  // set page to last page after fetching all pages on table route
-  useLayoutEffect(() => {
-    if (!init.current) return;
-
-    if (dishesData?.pages.length) {
-      init.current = false;
-      const lastPageIndex = dishesData?.pages.length;
-
-      setSearchParams(
-        (prev) => {
-          prev.set("page", lastPageIndex.toString());
-          return prev;
-        },
-        { replace: true }
-      );
-    }
-  }, [dishesData, setSearchParams]);
-
-  const dishes = useMemo(
-    () => dishesData?.pages.flatMap((page) => page.pageData) ?? [],
-    [dishesData]
-  );
-
-  const { data: waiters, isLoading: isLoadingWaiters } = useGetAllWaiters();
-
-  const { mutateAsync: createBill } = useCreateBill();
+  const [selectedCategory, setSelectedCategory] = useState<
+    (typeof DISHES_CATEGORIES)[number]
+  >(searchParams.get("category") ?? "all");
 
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
 
@@ -99,22 +40,24 @@ export const Receipt = (): JSX.Element => {
     }[]
   >([]);
 
+  const {
+    data: dishesData,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useGetDishesByPage(selectedCategory, PRICE_FILTERS[selectedPrice], 1);
+
+  const dishes = useMemo(
+    () => dishesData?.pages.flatMap((page) => page.pageData) ?? [],
+    [dishesData]
+  );
+
+  const { data: waiters } = useGetAllWaiters();
+
+  const { mutateAsync: createBill } = useCreateBill();
+
   useEffect(() => {
     if (waiters?.length) setSelectedWaiter(waiters[0]);
   }, [waiters]);
-
-  const [selectedPrice, setSelectedPrice] = useState<
-    keyof typeof PRICE_FILTERS
-  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
-
-  const [selectedCategory, setSelectedCategory] = useState<
-    (typeof DISHES_CATEGORIES)[number]
-  >(searchParams.get("category") ?? "all");
-
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
-    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
-  }, [selectedPrice, selectedCategory, queryClient]);
 
   const handleCreateBill = async () => {
     if (!selectedDishes.length) {
@@ -151,15 +94,11 @@ export const Receipt = (): JSX.Element => {
     observer.current = new IntersectionObserver((entries) => {
       if (!entries[0].isIntersecting) return;
 
-      const total = dishesData?.pages[0]?.totalPages ?? 0;
-      const current = Number(searchParams.get("page") ?? 1);
+      const lastPageNumber =
+        dishesData?.pages[dishesData.pages.length - 1]?.currentPageNumber ?? 0;
+      const totalPages = dishesData?.pages[0]?.totalPages ?? 0;
 
-      if (current < total) {
-        setSearchParams((prev) => {
-          prev.set("page", (Number(prev.get("page") ?? 1) + 1).toString());
-          return prev;
-        });
-
+      if (lastPageNumber + 1 <= totalPages && !isFetchingNextPage) {
         fetchNextPage();
       }
     }, OBSERVER_OPTIONS);
@@ -195,7 +134,6 @@ export const Receipt = (): JSX.Element => {
                   setSelectedCategory(option);
                   setSearchParams((prev) => {
                     prev.set("category", option);
-                    prev.set("page", "1");
                     return prev;
                   });
                 }}
@@ -214,7 +152,6 @@ export const Receipt = (): JSX.Element => {
                       "price",
                       PRICE_FILTERS[option as keyof typeof PRICE_FILTERS]
                     );
-                    prev.set("page", "1");
                     return prev;
                   });
                 }}
@@ -304,13 +241,7 @@ export const Receipt = (): JSX.Element => {
           ))}
         </div>
 
-        {!isFetchingNextPage && !isLoadingDishes && (
-          <div ref={handleIntersect} />
-        )}
-
-        {(isLoadingDishes || isLoadingWaiters || isFetchingNextPage) && (
-          <Loader />
-        )}
+        {isFetchingNextPage ? <Loader /> : <div ref={handleIntersect} />}
       </div>
     </div>
   );

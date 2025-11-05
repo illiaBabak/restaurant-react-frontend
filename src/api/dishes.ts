@@ -18,8 +18,23 @@ import { isDishesPageResponse } from "src/utils/guards";
 import { fetchWithParams } from "src/utils/fetchWithParams";
 import { PageData } from "src/types";
 
-const getDishesByPage = async (): Promise<PageData<Dish[]>> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/dishes`);
+const getDishesByPage = async (
+  pageParam: number,
+  category: string,
+  price: string,
+  search?: string
+): Promise<PageData<Dish[]>> => {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "dish",
+    method: "GET",
+    urlParams: new URLSearchParams({
+      page: pageParam.toString(),
+      category,
+      price,
+      search: search ?? "",
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch dishes");
@@ -35,7 +50,9 @@ const getDishesByPage = async (): Promise<PageData<Dish[]>> => {
 };
 
 const addDish = async (dish: NewDish): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "dish",
     method: "POST",
     body: JSON.stringify(dish),
   });
@@ -46,7 +63,9 @@ const addDish = async (dish: NewDish): Promise<void> => {
 };
 
 const updateDish = async (dish: Dish): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "dish",
     method: "PUT",
     body: JSON.stringify(dish),
   });
@@ -57,7 +76,9 @@ const updateDish = async (dish: Dish): Promise<void> => {
 };
 
 const deleteDish = async (id: string): Promise<void> => {
-  const response = await fetchWithParams(`${BACKEND_URL}/dishes`, {
+  const response = await fetchWithParams({
+    apiUrl: BACKEND_URL,
+    url: "dish",
     method: "DELETE",
     body: JSON.stringify({ id }),
   });
@@ -67,16 +88,22 @@ const deleteDish = async (id: string): Promise<void> => {
   }
 };
 
-export const useGetDishesByPage = (): UseInfiniteQueryResult<
+export const useGetDishesByPage = (
+  category: string,
+  price: string,
+  initialPage: number,
+  search?: string
+): UseInfiniteQueryResult<
   {
     pages: PageData<Dish>[];
   },
   Error
 > =>
   useInfiniteQuery({
-    queryKey: [DISHES_GET_QUERY],
-    queryFn: getDishesByPage,
-    initialPageParam: 1,
+    queryKey: [DISHES_GET_QUERY, category, price, search],
+    queryFn: ({ pageParam }) =>
+      getDishesByPage(pageParam, category, price, search),
+    initialPageParam: initialPage || 1,
     getNextPageParam: ({ currentPageNumber, totalPages }) => {
       return currentPageNumber < totalPages ? currentPageNumber + 1 : undefined;
     },

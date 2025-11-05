@@ -1,4 +1,4 @@
-import { JSX, useContext, useEffect, useMemo, useState } from "react";
+import { JSX, useContext, useMemo, useState } from "react";
 import {
   useAddDish,
   useDeleteDish,
@@ -17,8 +17,6 @@ import { Dropdown } from "src/components/Dropdown";
 import { DISHES_CATEGORIES, PRICE_FILTERS } from "src/utils/constants";
 import { useSearchParams } from "react-router-dom";
 import { removeUnderlines } from "src/utils/removeUnderlines";
-import { useQueryClient } from "@tanstack/react-query";
-import { DISHES_GET_QUERY } from "src/api/constants";
 
 const dishesColumns: ColumnDef<Dish>[] = [
   {
@@ -51,6 +49,18 @@ export const DishesManagment = (): JSX.Element => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const currentPage = Number(searchParams.get("page") ?? 1);
+
+  const searchQuery = searchParams.get("search") ?? "";
+
+  const [selectedPrice, setSelectedPrice] = useState<
+    keyof typeof PRICE_FILTERS
+  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
+
+  const [selectedCategory, setSelectedCategory] = useState<
+    (typeof DISHES_CATEGORIES)[number]
+  >(searchParams.get("category") ?? "all");
+
   const {
     data: dishesData,
     isLoading: isLoadingDishes,
@@ -58,16 +68,21 @@ export const DishesManagment = (): JSX.Element => {
     fetchPreviousPage,
     isFetchingNextPage,
     isFetchingPreviousPage,
-  } = useGetDishesByPage();
-
-  const queryClient = useQueryClient();
+    hasNextPage,
+    hasPreviousPage,
+  } = useGetDishesByPage(
+    selectedCategory,
+    PRICE_FILTERS[selectedPrice],
+    currentPage,
+    searchQuery
+  );
 
   const dishes = useMemo(() => {
     const pageIndex = dishesData?.pages.findIndex(
-      (page) => page.currentPageNumber === Number(searchParams.get("page") ?? 1)
+      (page) => page.currentPageNumber === currentPage
     );
     return dishesData?.pages[pageIndex ?? 0]?.pageData ?? [];
-  }, [dishesData, searchParams]);
+  }, [dishesData, currentPage]);
 
   const pageCount = dishesData?.pages[0]?.totalPages ?? 0;
 
@@ -86,36 +101,6 @@ export const DishesManagment = (): JSX.Element => {
   const [originalDishToEdit, setOriginalDishToEdit] = useState<Dish | null>(
     null
   );
-
-  const searchQuery = searchParams.get("search") ?? "";
-
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
-    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
-  }, [searchQuery, queryClient]);
-
-  useEffect(() => {
-    setSearchParams((prev) => {
-      if (!searchParams.get("price")) prev.set("price", "all");
-
-      if (!searchParams.get("category")) prev.set("category", "all");
-
-      return prev;
-    });
-  }, [setSearchParams, searchParams]);
-
-  const [selectedPrice, setSelectedPrice] = useState<
-    keyof typeof PRICE_FILTERS
-  >((searchParams.get("price") as keyof typeof PRICE_FILTERS) ?? "all");
-
-  const [selectedCategory, setSelectedCategory] = useState<
-    (typeof DISHES_CATEGORIES)[number]
-  >(searchParams.get("category") ?? "all");
-
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: [DISHES_GET_QUERY] });
-    queryClient.invalidateQueries({ queryKey: [DISHES_GET_QUERY] });
-  }, [selectedPrice, selectedCategory, queryClient]);
 
   const isChangedDish =
     JSON.stringify(originalDishToEdit) !== JSON.stringify(dishToEdit);
@@ -186,6 +171,7 @@ export const DishesManagment = (): JSX.Element => {
                 setSelectedCategory(option);
                 setSearchParams((prev) => {
                   prev.set("category", option);
+                  prev.set("page", "1");
                   return prev;
                 });
               }}
@@ -198,12 +184,13 @@ export const DishesManagment = (): JSX.Element => {
               options={Object.keys(PRICE_FILTERS)}
               selectedOption={removeUnderlines(selectedPrice)}
               setSelectedOption={(option) => {
-                setSelectedPrice(option as keyof typeof PRICE_FILTERS);
+                const key = option as keyof typeof PRICE_FILTERS;
+
+                setSelectedPrice(key);
                 setSearchParams((prev) => {
-                  prev.set(
-                    "price",
-                    PRICE_FILTERS[option as keyof typeof PRICE_FILTERS]
-                  );
+                  prev.set("price", PRICE_FILTERS[key]);
+                  prev.set("page", "1");
+
                   return prev;
                 });
               }}
@@ -232,26 +219,37 @@ export const DishesManagment = (): JSX.Element => {
         }}
         pageCount={pageCount}
         fetchNextPage={() => {
-          const nextPageIndex =
-            (dishesData?.pages.findIndex(
-              (page) =>
-                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
-            ) ?? 0) + 1;
+          const next = currentPage + 1;
 
-          if (dishesData?.pages?.[nextPageIndex]?.pageData?.length) return;
+          setSearchParams((prev) => {
+            prev.set("page", String(next));
+            return prev;
+          });
 
-          fetchNextPage();
+          const isPageExists = dishesData?.pages?.some(
+            (p) => p.currentPageNumber === next
+          );
+
+          if (!isPageExists && hasNextPage) {
+            fetchNextPage();
+          }
         }}
         fetchPreviousPage={() => {
-          const previousPageIndex =
-            (dishesData?.pages.findIndex(
-              (page) =>
-                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
-            ) ?? 0) - 1;
+          const prev = currentPage - 1;
+          if (prev < 1) return;
 
-          if (dishesData?.pages?.[previousPageIndex]?.pageData?.length) return;
+          setSearchParams((prevParams) => {
+            prevParams.set("page", String(prev));
+            return prevParams;
+          });
 
-          fetchPreviousPage();
+          const isPageExists = dishesData?.pages?.some(
+            (p) => p.currentPageNumber === prev
+          );
+
+          if (!isPageExists && hasPreviousPage) {
+            fetchPreviousPage();
+          }
         }}
       />
 

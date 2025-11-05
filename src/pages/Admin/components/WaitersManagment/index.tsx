@@ -1,4 +1,4 @@
-import { JSX, useContext, useEffect, useMemo, useState } from "react";
+import { JSX, useContext, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { NewWaiter, Waiter } from "src/types";
 import {
@@ -16,8 +16,6 @@ import { GlobalContext } from "src/contexts/contexts";
 import { FormInput } from "src/components/FormInput";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "src/components/Search";
-import { WAITERS_GET_QUERY } from "src/api/constants";
-import { useQueryClient } from "@tanstack/react-query";
 
 const waitersColumns: ColumnDef<Waiter>[] = [
   {
@@ -53,9 +51,11 @@ const EMPTY_WAITER_VALUES: NewWaiter = {
 export const WaitersManagment = (): JSX.Element => {
   const { setAlertProps } = useContext(GlobalContext);
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const queryClient = useQueryClient();
+  const currentPage = Number(searchParams.get("page") ?? 1);
+
+  const searchQuery = searchParams.get("search") ?? "";
 
   const {
     data: waitersData,
@@ -64,7 +64,9 @@ export const WaitersManagment = (): JSX.Element => {
     fetchPreviousPage,
     isFetchingNextPage,
     isFetchingPreviousPage,
-  } = useGetWaitersByPage();
+    hasNextPage,
+    hasPreviousPage,
+  } = useGetWaitersByPage(currentPage, searchQuery);
 
   const waiters = useMemo(() => {
     const pageIndex = waitersData?.pages.findIndex(
@@ -93,13 +95,6 @@ export const WaitersManagment = (): JSX.Element => {
   // check if waiter has changed to avoid PUT request if nothing has changed
   const isChangedWaiter =
     JSON.stringify(originalWaiterToEdit) !== JSON.stringify(waiterToEdit);
-
-  const searchQuery = searchParams.get("search") ?? "";
-
-  useEffect(() => {
-    queryClient.removeQueries({ queryKey: [WAITERS_GET_QUERY] });
-    queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
-  }, [searchQuery, queryClient]);
 
   const allFieldsAreFilled = Object.values(
     waiterToEdit ? waiterToEdit : newWaiter
@@ -184,26 +179,37 @@ export const WaitersManagment = (): JSX.Element => {
         }}
         pageCount={pageCount}
         fetchNextPage={() => {
-          const nextPageIndex =
-            (waitersData?.pages.findIndex(
-              (page) =>
-                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
-            ) ?? 0) + 1;
+          const next = currentPage + 1;
 
-          if (waitersData?.pages?.[nextPageIndex]?.pageData?.length) return;
+          setSearchParams((prev) => {
+            prev.set("page", String(next));
+            return prev;
+          });
 
-          fetchNextPage();
+          const isPageExists = waitersData?.pages?.some(
+            (p) => p.currentPageNumber === next
+          );
+
+          if (!isPageExists && hasNextPage) {
+            fetchNextPage();
+          }
         }}
         fetchPreviousPage={() => {
-          const previousPageIndex =
-            (waitersData?.pages.findIndex(
-              (page) =>
-                page.currentPageNumber === Number(searchParams.get("page") ?? 1)
-            ) ?? 0) - 1;
+          const prev = currentPage - 1;
+          if (prev < 1) return;
 
-          if (waitersData?.pages?.[previousPageIndex]?.pageData?.length) return;
+          setSearchParams((prevParams) => {
+            prevParams.set("page", String(prev));
+            return prevParams;
+          });
 
-          fetchPreviousPage();
+          const isPageExists = waitersData?.pages?.some(
+            (p) => p.currentPageNumber === prev
+          );
+
+          if (!isPageExists && hasPreviousPage) {
+            fetchPreviousPage();
+          }
         }}
       />
 
