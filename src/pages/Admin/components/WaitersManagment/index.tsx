@@ -1,4 +1,4 @@
-import { JSX, useContext, useMemo, useState } from "react";
+import { JSX, useContext, useEffect, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { NewWaiter, Waiter } from "src/types";
 import {
@@ -16,6 +16,7 @@ import { GlobalContext } from "src/contexts/contexts";
 import { FormInput } from "src/components/FormInput";
 import { useSearchParams } from "react-router-dom";
 import { Search } from "src/components/Search";
+import { useGooglePlaceSuggestions } from "src/api/googlePlaces";
 
 const waitersColumns: ColumnDef<Waiter>[] = [
   {
@@ -56,6 +57,25 @@ export const WaitersManagment = (): JSX.Element => {
   const currentPage = Number(searchParams.get("page") ?? 1);
 
   const searchQuery = searchParams.get("search") ?? "";
+
+  const [searchedPlace, setSearchedPlace] = useState("");
+  const [debouncedSearchedPlace, setDebouncedSearchedPlace] = useState("");
+
+  const { data: suggestions } = useGooglePlaceSuggestions(
+    debouncedSearchedPlace,
+    {
+      enabled: debouncedSearchedPlace.length > 2,
+      staleTime: 1000 * 60,
+    }
+  );
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearchedPlace(searchedPlace);
+    }, 4000);
+
+    return () => clearTimeout(timeout);
+  }, [searchedPlace]);
 
   const {
     data: waitersData,
@@ -293,20 +313,49 @@ export const WaitersManagment = (): JSX.Element => {
                   value={
                     waiterToEdit ? waiterToEdit.address : newWaiter.address
                   }
-                  onChange={({ target: { value } }) =>
-                    waiterToEdit
-                      ? setWaiterToEdit({ ...waiterToEdit, address: value })
-                      : setNewWaiter({ ...newWaiter, address: value })
-                  }
+                  onChange={({ target: { value } }) => {
+                    if (waiterToEdit)
+                      setWaiterToEdit({ ...waiterToEdit, address: value });
+                    else setNewWaiter({ ...newWaiter, address: value });
+
+                    setSearchedPlace(value);
+                  }}
                   type="text"
                 />
+                {suggestions && (
+                  <div className="flex flex-col gap-2 border-2 border-violet-300 rounded-md p-2">
+                    {suggestions.suggestions.map((suggestion) => (
+                      <div
+                        className="hover:bg-violet-100 cursor-pointer p-2 rounded-md"
+                        key={suggestion.placePrediction.placeId}
+                        onClick={() => {
+                          if (waiterToEdit)
+                            setWaiterToEdit({
+                              ...waiterToEdit,
+                              address: suggestion.placePrediction.text.text,
+                            });
+                          else
+                            setNewWaiter({
+                              ...newWaiter,
+                              address: suggestion.placePrediction.text.text,
+                            });
+
+                          setSearchedPlace("");
+                        }}
+                      >
+                        {suggestion.placePrediction.text.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3 sm:gap-2 w-full flex-col mt-4">
                 <div className="flex items-center justify-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-[80%]">
                   <button
                     className={`${
-                      allFieldsAreFilled && isChangedWaiter
+                      allFieldsAreFilled &&
+                      (waiterToEdit ? isChangedWaiter : true)
                         ? "bg-violet-500 cursor-pointer transition-all duration-300 hover:scale-105"
                         : "bg-gray-500/50 cursor-not-allowed"
                     } w-full text-white rounded-md p-2 sm:p-2.5 text-sm sm:text-base`}

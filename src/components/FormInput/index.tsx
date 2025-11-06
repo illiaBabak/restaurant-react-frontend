@@ -1,4 +1,4 @@
-import { ChangeEvent, JSX } from "react";
+import { ChangeEvent, JSX, KeyboardEvent } from "react";
 import { capitalize } from "src/utils/capitalize";
 
 type Props = {
@@ -7,6 +7,8 @@ type Props = {
   placeholder: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   type: "text" | "email" | "number";
+  onBlur?: () => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 };
 
 export const FormInput = ({
@@ -15,6 +17,8 @@ export const FormInput = ({
   placeholder,
   onChange,
   type,
+  onBlur,
+  onKeyDown,
 }: Props): JSX.Element => (
   <div className="flex flex-col gap-2">
     <label htmlFor={label}>{capitalize(label)}</label>
@@ -26,6 +30,8 @@ export const FormInput = ({
       type={type}
       id={label}
       min={1}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
     />
   </div>
 );

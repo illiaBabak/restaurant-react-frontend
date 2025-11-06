@@ -1,4 +1,10 @@
-import { Waiter, Response, Dish, PageResponse } from "src/types";
+import {
+  Waiter,
+  Response,
+  Dish,
+  PageResponse,
+  SuggestionsResponse,
+} from "src/types";
 
 export const isString = (value: unknown): value is string =>
   typeof value === "string";
@@ -87,3 +93,22 @@ export const isWaitersPageResponse = (
   isNumber(value.data.totalCount) &&
   "pageData" in value.data &&
   isWaiters(value.data.pageData);
+
+export const isSuggestionsResponse = (
+  value: unknown
+): value is SuggestionsResponse =>
+  isObject(value) &&
+  "suggestions" in value &&
+  Array.isArray(value.suggestions) &&
+  value.suggestions.every(
+    (el) =>
+      isObject(el) &&
+      "placePrediction" in el &&
+      isObject(el.placePrediction) &&
+      "placeId" in el.placePrediction &&
+      isString(el.placePrediction.placeId) &&
+      "text" in el.placePrediction &&
+      isObject(el.placePrediction.text) &&
+      "text" in el.placePrediction.text &&
+      isString(el.placePrediction.text.text)
+  );

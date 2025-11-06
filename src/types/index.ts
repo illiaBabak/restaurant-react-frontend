@@ -56,3 +56,14 @@ export type PageResponse<T> = {
   data: PageData<T>;
   error: null;
 };
+
+export type SuggestionsResponse = {
+  suggestions: {
+    placePrediction: {
+      placeId: string;
+      text: {
+        text: string;
+      };
+    };
+  }[];
+};
