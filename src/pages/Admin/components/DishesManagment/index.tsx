@@ -138,8 +138,20 @@ export const DishesManagment = (): JSX.Element => {
       return;
     }
 
-    if (dishToEdit) await updateDish(dishToEdit);
-    else await addDish(newDish);
+    if (dishToEdit)
+      await updateDish({
+        dish: dishToEdit,
+        search: searchQuery,
+        category: selectedCategory,
+        price: PRICE_FILTERS[selectedPrice],
+      });
+    else
+      await addDish({
+        dish: newDish,
+        search: searchQuery,
+        category: selectedCategory,
+        price: PRICE_FILTERS[selectedPrice],
+      });
 
     closeModal();
   };
@@ -147,7 +159,12 @@ export const DishesManagment = (): JSX.Element => {
   const handleDeleteDish = async () => {
     if (!dishToEdit) return;
 
-    await deleteDish(dishToEdit.id);
+    await deleteDish({
+      id: dishToEdit.id,
+      search: searchQuery,
+      category: selectedCategory,
+      price: PRICE_FILTERS[selectedPrice],
+    });
 
     closeModal();
   };

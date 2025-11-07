@@ -72,10 +72,10 @@ export const WaitersManagment = (): JSX.Element => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearchedPlace(searchedPlace);
-    }, 4000);
+    }, 400);
 
     return () => clearTimeout(timeout);
-  }, [searchedPlace]);
+  }, [searchedPlace, setDebouncedSearchedPlace]);
 
   const {
     data: waitersData,
@@ -125,6 +125,8 @@ export const WaitersManagment = (): JSX.Element => {
     setNewWaiter(EMPTY_WAITER_VALUES);
     setWaiterToEdit(null);
     setOriginalWaiterToEdit(null);
+    setSearchedPlace("");
+    setDebouncedSearchedPlace("");
   };
 
   const handleCreateAndUpdateWaiter = async () => {
@@ -153,8 +155,9 @@ export const WaitersManagment = (): JSX.Element => {
       return;
     }
 
-    if (waiterToEdit) await updateWaiter(waiterToEdit);
-    else await addWaiter(newWaiter);
+    if (waiterToEdit)
+      await updateWaiter({ waiter: waiterToEdit, search: searchQuery });
+    else await addWaiter({ waiter: newWaiter, search: searchQuery });
 
     closeModal();
   };
@@ -162,7 +165,7 @@ export const WaitersManagment = (): JSX.Element => {
   const handleDeleteWaiter = async () => {
     if (!waiterToEdit) return;
 
-    await deleteWaiter(waiterToEdit.id);
+    await deleteWaiter({ id: waiterToEdit.id, search: searchQuery });
 
     closeModal();
   };

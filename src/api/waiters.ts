@@ -107,7 +107,7 @@ export const useGetWaitersByPage = (
   search?: string
 ): UseInfiniteQueryResult<{ pages: PageData<Waiter>[] }, Error> =>
   useInfiniteQuery({
-    queryKey: [WAITERS_GET_QUERY, search],
+    queryKey: [WAITERS_GET_QUERY, search ?? ""],
     queryFn: ({ pageParam }) => getWaitersByPage(pageParam, search),
     initialPageParam: initialPage || 1,
     getNextPageParam: ({ currentPageNumber, totalPages }) => {
@@ -127,18 +127,25 @@ export const useGetAllWaiters = (): UseQueryResult<Waiter[], Error> =>
     queryFn: getAllWaiters,
   });
 
-export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
+export const useAddWaiter = (): UseMutationResult<
+  void,
+  Error,
+  {
+    waiter: NewWaiter;
+    search?: string;
+  }
+> => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [WAITERS_MUTATION, WAITERS_ADD_QUERY],
-    mutationFn: addWaiter,
-    onMutate: (waiter) => {
+    mutationFn: ({ waiter }) => addWaiter(waiter),
+    onMutate: ({ waiter, search = "" }) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
       const prevWaitersPages = queryClient.getQueryData<{
         pages: PageData<Waiter>[];
-      }>([WAITERS_GET_QUERY]) ?? { pages: [] };
+      }>([WAITERS_GET_QUERY, search ?? ""]) ?? { pages: [] };
 
       const newWaitersPages = prevWaitersPages?.pages?.map((page) => {
         if (page.currentPageNumber === 1) {
@@ -151,16 +158,15 @@ export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
         return page;
       });
 
-      queryClient.setQueryData([WAITERS_GET_QUERY], {
+      queryClient.setQueryData([WAITERS_GET_QUERY, search ?? ""], {
         ...prevWaitersPages,
         pages: newWaitersPages,
       });
 
       return { prevWaitersPages };
     },
-    onSettled: () => {
-      queryClient.removeQueries({ queryKey: [WAITERS_GET_QUERY] });
-      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+    onSettled: (_, __, { search }) => {
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY, search] });
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
     onError: (_, __, context) => {
@@ -173,29 +179,34 @@ export const useAddWaiter = (): UseMutationResult<void, Error, NewWaiter> => {
   });
 };
 
-export const useUpdateWaiter = (): UseMutationResult<void, Error, Waiter> => {
+export const useUpdateWaiter = (): UseMutationResult<
+  void,
+  Error,
+  {
+    waiter: Waiter;
+    search?: string;
+  }
+> => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [WAITERS_MUTATION, WAITERS_UPDATE_QUERY],
-    mutationFn: updateWaiter,
-    onMutate: (editedWaiter) => {
+    mutationFn: ({ waiter }) => updateWaiter(waiter),
+    onMutate: ({ waiter, search = "" }) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
       const prevWaiters = queryClient.getQueryData<{
         pages: PageData<Waiter>[];
-      }>([WAITERS_GET_QUERY]);
+      }>([WAITERS_GET_QUERY, search ?? ""]);
 
       const newWaitersPages = prevWaiters?.pages.map((page) => {
         return {
           ...page,
-          pageData: page.pageData.map((w) =>
-            w.id === editedWaiter.id ? editedWaiter : w
-          ),
+          pageData: page.pageData.map((w) => (w.id === waiter.id ? waiter : w)),
         };
       });
 
-      queryClient.setQueryData([WAITERS_GET_QUERY], {
+      queryClient.setQueryData([WAITERS_GET_QUERY, search ?? ""], {
         ...prevWaiters,
         pages: newWaitersPages,
       });
@@ -207,25 +218,32 @@ export const useUpdateWaiter = (): UseMutationResult<void, Error, Waiter> => {
         queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+    onSettled: (_, __, { search }) => {
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY, search] });
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
   });
 };
 
-export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
+export const useDeleteWaiter = (): UseMutationResult<
+  void,
+  Error,
+  {
+    id: string;
+    search?: string;
+  }
+> => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: [WAITERS_MUTATION, WAITERS_DELETE_QUERY],
-    mutationFn: deleteWaiter,
-    onMutate: (id) => {
+    mutationFn: ({ id }) => deleteWaiter(id),
+    onMutate: ({ id, search = "" }) => {
       queryClient.cancelQueries({ queryKey: [WAITERS_GET_QUERY] });
 
       const prevWaiters = queryClient.getQueryData<{
         pages: PageData<Waiter>[];
-      }>([WAITERS_GET_QUERY]);
+      }>([WAITERS_GET_QUERY, search ?? ""]);
 
       const newWaitersPages = prevWaiters?.pages.map((page) => {
         return {
@@ -234,7 +252,7 @@ export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
         };
       });
 
-      queryClient.setQueryData([WAITERS_GET_QUERY], {
+      queryClient.setQueryData([WAITERS_GET_QUERY, search ?? ""], {
         ...prevWaiters,
         pages: newWaitersPages,
       });
@@ -246,8 +264,8 @@ export const useDeleteWaiter = (): UseMutationResult<void, Error, string> => {
         queryClient.setQueryData([WAITERS_GET_QUERY], context.prevWaiters);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY] });
+    onSettled: (_, __, { search }) => {
+      queryClient.invalidateQueries({ queryKey: [WAITERS_GET_QUERY, search] });
       queryClient.invalidateQueries({ queryKey: [WAITERS_GET_ALL_QUERY] });
     },
   });

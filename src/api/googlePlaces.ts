@@ -35,7 +35,7 @@ const getPlaces = async (
   }
 
   const data = await response.json();
-  console.log(data);
+
   return isSuggestionsResponse(data) ? data : null;
 };
 
