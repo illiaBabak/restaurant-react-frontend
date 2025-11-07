@@ -70,9 +70,19 @@ export const Receipt = (): JSX.Element => {
     }
 
     const blob = await createBill({
-      createdAt: new Date().toISOString(),
-      waiter_id: selectedWaiter?.id ?? "",
-      dishes: selectedDishes,
+      bill: {
+        createdAt: new Date().toISOString(),
+        waiter_id: selectedWaiter?.id ?? "",
+        dishes: selectedDishes,
+      },
+      waiter: selectedWaiter ?? {
+        id: "",
+        name: "",
+        surname: "",
+        email: "",
+        phone_number: "",
+        address: "",
+      },
     });
 
     const url = URL.createObjectURL(blob);

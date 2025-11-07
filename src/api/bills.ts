@@ -1,15 +1,18 @@
 import { BACKEND_URL } from "src/utils/constants";
-import { Bill } from "src/types";
+import { Bill, Waiter } from "src/types";
 import { BILLS_CREATE_QUERY } from "./constants";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { fetchWithParams } from "src/utils/fetchWithParams";
 
-const createBill = async (bill: Bill): Promise<Blob> => {
+const createBill = async (bill: Bill, waiter: Waiter): Promise<Blob> => {
   const response = await fetchWithParams({
     apiUrl: BACKEND_URL,
     url: "bill",
     method: "POST",
-    body: JSON.stringify(bill),
+    body: JSON.stringify({
+      bill: bill,
+      waiter: waiter,
+    }),
   });
 
   if (!response.ok) {
@@ -25,9 +28,13 @@ const createBill = async (bill: Bill): Promise<Blob> => {
   return blob;
 };
 
-export const useCreateBill = (): UseMutationResult<Blob, Error, Bill> => {
+export const useCreateBill = (): UseMutationResult<
+  Blob,
+  Error,
+  { bill: Bill; waiter: Waiter }
+> => {
   return useMutation({
     mutationKey: [BILLS_CREATE_QUERY],
-    mutationFn: createBill,
+    mutationFn: ({ bill, waiter }) => createBill(bill, waiter),
   });
 };
