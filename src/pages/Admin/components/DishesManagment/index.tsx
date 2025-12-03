@@ -170,7 +170,10 @@ export const DishesManagment = (): JSX.Element => {
   };
 
   return (
-    <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
+    <div
+      data-testid="dishes-managment"
+      className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4"
+    >
       <div className="flex justify-between items-center flex-row h-[65px]">
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
           <h2 className="text-xl sm:text-2xl font-bold tracking-wide">
@@ -216,6 +219,7 @@ export const DishesManagment = (): JSX.Element => {
         </div>
 
         <button
+          data-testid="add-dish-btn"
           onClick={() => setShouldShowModal(true)}
           className="rounded-md cursor-pointer transition-all duration-300 hover:scale-115 mb-3 sm:mb-4"
         >
@@ -292,6 +296,7 @@ export const DishesManagment = (): JSX.Element => {
             <form className="flex flex-col justify-between min-h-[calc(100%-4rem)]">
               <div className="flex flex-col gap-3 sm:gap-4">
                 <FormInput
+                  inputTestId="dish-name"
                   label="name"
                   placeholder="Enter name"
                   value={dishToEdit ? dishToEdit.name : newDish.name}
@@ -303,6 +308,7 @@ export const DishesManagment = (): JSX.Element => {
                   type="text"
                 />
                 <FormInput
+                  inputTestId="dish-price"
                   label="price"
                   placeholder="Enter price"
                   value={
@@ -318,6 +324,7 @@ export const DishesManagment = (): JSX.Element => {
                   type="number"
                 />
                 <FormInput
+                  inputTestId="dish-weight"
                   label="weight"
                   placeholder="Enter weight"
                   value={
@@ -351,6 +358,7 @@ export const DishesManagment = (): JSX.Element => {
               <div className="flex items-center gap-3 sm:gap-2 w-full flex-col mt-4">
                 <div className="flex items-center justify-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-[80%]">
                   <button
+                    data-testid="create-dish-btn"
                     className={`${
                       (
                         isChangedDish && dishToEdit
@@ -368,6 +376,7 @@ export const DishesManagment = (): JSX.Element => {
 
                   {!!dishToEdit && (
                     <button
+                      data-testid="dish-dlt-btn"
                       className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 sm:p-2.5 transition-all duration-300 hover:scale-105 text-sm sm:text-base`}
                       type="button"
                       onClick={handleDeleteDish}

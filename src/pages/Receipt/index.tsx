@@ -170,6 +170,7 @@ export const Receipt = (): JSX.Element => {
           </div>
 
           <button
+            data-testid="create-bill-btn"
             className="bg-yellow-600 sm:mt-0 mt-4 text-white px-4 py-2 rounded-md cursor-pointer transition-all duration-300 hover:scale-105"
             onClick={handleCreateBill}
           >
@@ -192,6 +193,7 @@ export const Receipt = (): JSX.Element => {
 
               <div className="flex flex-row items-center gap-1">
                 <button
+                  data-testid={`dish-minus-${dish.id}`}
                   onClick={() => {
                     setSelectedDishes((prev) => {
                       const existingDish = prev.find(
@@ -220,11 +222,15 @@ export const Receipt = (): JSX.Element => {
                 >
                   -
                 </button>
-                <p className="p-0 m-0 text-xl md:text-2xl">
+                <p
+                  data-testid={`dish-quantity-${dish.id}`}
+                  className="p-0 m-0 text-xl md:text-2xl"
+                >
                   {selectedDishes.find((d) => d.dish_id === dish.id)
                     ?.quantity ?? 0}
                 </p>
                 <button
+                  data-testid={`dish-plus-${dish.id}`}
                   onClick={() => {
                     setSelectedDishes((prev) => {
                       const existingDish = prev.find(

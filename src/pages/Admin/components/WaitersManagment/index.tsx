@@ -171,7 +171,10 @@ export const WaitersManagment = (): JSX.Element => {
   };
 
   return (
-    <div className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4">
+    <div
+      data-testid="waiters-managment"
+      className="w-full px-3 sm:px-4 lg:px-7 pt-3 sm:pt-4"
+    >
       <div className="flex justify-between items-center flex-row h-[65px]">
         <div className="flex items-center gap-2 mb-3 sm:mb-4">
           <h2 className="text-xl sm:text-2xl font-bold tracking-wide">
@@ -182,6 +185,7 @@ export const WaitersManagment = (): JSX.Element => {
         </div>
 
         <button
+          data-testid="add-waiter-btn"
           onClick={() => setShouldShowModal(true)}
           className="rounded-md cursor-pointer transition-all duration-300 hover:scale-115 mb-3 sm:mb-4"
         >
@@ -258,6 +262,7 @@ export const WaitersManagment = (): JSX.Element => {
             <form className="flex flex-col justify-between min-h-[calc(100%-4rem)]">
               <div className="flex flex-col gap-3 sm:gap-4">
                 <FormInput
+                  inputTestId="waiter-name"
                   label="name"
                   placeholder="Enter name"
                   value={waiterToEdit ? waiterToEdit.name : newWaiter.name}
@@ -269,6 +274,7 @@ export const WaitersManagment = (): JSX.Element => {
                   type="text"
                 />
                 <FormInput
+                  inputTestId="waiter-surname"
                   label="surname"
                   placeholder="Enter surname"
                   value={
@@ -282,6 +288,7 @@ export const WaitersManagment = (): JSX.Element => {
                   type="text"
                 />
                 <FormInput
+                  inputTestId="waiter-email"
                   label="email"
                   placeholder="Eg example@example.com"
                   value={waiterToEdit ? waiterToEdit.email : newWaiter.email}
@@ -293,7 +300,8 @@ export const WaitersManagment = (): JSX.Element => {
                   type="email"
                 />
                 <FormInput
-                  label="phone_number"
+                  inputTestId="waiter-phone"
+                  label="phone number"
                   placeholder="Eg +1 800 000000"
                   value={
                     waiterToEdit
@@ -311,6 +319,7 @@ export const WaitersManagment = (): JSX.Element => {
                   type="text"
                 />
                 <FormInput
+                  inputTestId="waiter-address"
                   label="address"
                   placeholder="Eg 123 Main St, New York, USA"
                   value={
@@ -356,6 +365,7 @@ export const WaitersManagment = (): JSX.Element => {
               <div className="flex items-center gap-3 sm:gap-2 w-full flex-col mt-4">
                 <div className="flex items-center justify-center flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-[80%]">
                   <button
+                    data-testid="create-waiter-btn"
                     className={`${
                       allFieldsAreFilled &&
                       (waiterToEdit ? isChangedWaiter : true)
@@ -370,6 +380,7 @@ export const WaitersManagment = (): JSX.Element => {
 
                   {!!waiterToEdit && (
                     <button
+                      data-testid="waiter-dlt-btn"
                       className={`cursor-pointer w-full bg-red-500 text-white rounded-md p-2 sm:p-2.5 transition-all duration-300 hover:scale-105 text-sm sm:text-base`}
                       type="button"
                       onClick={handleDeleteWaiter}

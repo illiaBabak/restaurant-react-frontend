@@ -18,6 +18,7 @@ export const Alert = ({
   onMouseLeave,
 }: AlertComponentProps): JSX.Element => (
   <motion.div
+    data-testid="alert"
     initial={{ y: -100 }}
     animate={{ y: 0 }}
     transition={{ duration: 1.3, ease: "easeInOut" }}

@@ -106,8 +106,9 @@ export const Table = <T,>({
               {/* Data */}
               {!isLoading &&
                 !!data.length &&
-                table.getRowModel().rows.map((row) => (
+                table.getRowModel().rows.map((row, index) => (
                   <tr
+                    data-testid={`table-row-${index}`}
                     onClick={() => getClickedRow?.(row.original)}
                     className="hover:bg-neutral-100 cursor-pointer h-[44px] sm:h-[52px]"
                     key={`table-row-${row.id}`}
@@ -161,11 +162,13 @@ export const Table = <T,>({
         </p>
         <div className="flex gap-2 w-full sm:w-auto order-2 sm:order-2">
           <button
+            data-testid="pagination-prev-btn"
             onClick={() => {
               if (!table.getCanPreviousPage()) return;
 
               fetchPreviousPage();
             }}
+            disabled={!table.getCanPreviousPage()}
             className={`${
               table.getCanPreviousPage()
                 ? "bg-violet-500 hover:bg-violet-600 cursor-pointer"
@@ -175,11 +178,13 @@ export const Table = <T,>({
             Previous
           </button>
           <button
+            data-testid="pagination-next-btn"
             onClick={() => {
               if (!table.getCanNextPage()) return;
 
               fetchNextPage();
             }}
+            disabled={!table.getCanNextPage()}
             className={`${
               table.getCanNextPage()
                 ? "bg-violet-500 hover:bg-violet-600 cursor-pointer"

@@ -25,6 +25,7 @@ export const SideBar = (): JSX.Element => {
       <div className="flex flex-col w-[300px] lg:w-auto gap-2">
         {TABLES_CATEGORIES.map((category, index) => (
           <h3
+            data-testid={`${category}-sidebar-btn`}
             onClick={() => changeCategory(category)}
             key={`${category}-${index}`}
             className={`text-base w-full lg:w-auto tracking-wide lg:text-start text-center cursor-pointer border-2 border-transparent px-3 py-2 rounded-xl transition-all duration-300 ease-in-out hover:border-violet-300 hover:shadow-sm ${
