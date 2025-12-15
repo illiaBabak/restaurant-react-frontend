@@ -1,4 +1,5 @@
-export const BACKEND_URL = "http://localhost:8000";
+export const BACKEND_URL =
+  "https://restaurant-php-mvc-backend-production.up.railway.app";
 
 export const ROUTES = {
   admin: "/admin",

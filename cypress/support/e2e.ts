@@ -15,6 +15,7 @@
 
 // Import commands.js using ES2015 syntax:
 import "./commands";
+import { BACKEND_URL } from "../../src/utils/constants";
 
 export const MOCK_WAITERS = [
   {
@@ -331,7 +332,7 @@ beforeEach(() => {
   waitersDB = [...MOCK_WAITERS];
   dishesDB = [...MOCK_DISHES];
 
-  cy.intercept("GET", "http://localhost:8000/waiter/all", (req) => {
+  cy.intercept("GET", `${BACKEND_URL}/waiter/all`, (req) => {
     req.reply({
       body: {
         data: MOCK_WAITERS,
@@ -339,7 +340,7 @@ beforeEach(() => {
     });
   }).as("getAllWaiters");
 
-  cy.intercept("GET", "http://localhost:8000/waiter?page=*", (req) => {
+  cy.intercept("GET", `${BACKEND_URL}/waiter?page=*`, (req) => {
     const pageParam = req.query.page || "1";
     const page = Number(pageParam);
 
@@ -362,7 +363,7 @@ beforeEach(() => {
     });
   }).as("getWaiters");
 
-  cy.intercept("GET", "http://localhost:8000/dish?page=*", (req) => {
+  cy.intercept("GET", `${BACKEND_URL}/dish?page=*`, (req) => {
     const pageParam = req.query.page || "1";
     const page = Number(pageParam);
 
@@ -385,7 +386,7 @@ beforeEach(() => {
     });
   }).as("getDishes");
 
-  cy.intercept("POST", "http://localhost:8000/waiter", (req) => {
+  cy.intercept("POST", `${BACKEND_URL}/waiter`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
@@ -408,7 +409,7 @@ beforeEach(() => {
     });
   }).as("createWaiter");
 
-  cy.intercept("DELETE", "http://localhost:8000/waiter", (req) => {
+  cy.intercept("DELETE", `${BACKEND_URL}/waiter`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
@@ -422,7 +423,7 @@ beforeEach(() => {
     });
   }).as("deleteWaiter");
 
-  cy.intercept("PUT", "http://localhost:8000/waiter", (req) => {
+  cy.intercept("PUT", `${BACKEND_URL}/waiter`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
@@ -439,7 +440,7 @@ beforeEach(() => {
     });
   }).as("updateWaiter");
 
-  cy.intercept("POST", "http://localhost:8000/dish", (req) => {
+  cy.intercept("POST", `${BACKEND_URL}/dish`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
@@ -461,7 +462,7 @@ beforeEach(() => {
     });
   }).as("createDish");
 
-  cy.intercept("DELETE", "http://localhost:8000/dish", (req) => {
+  cy.intercept("DELETE", `${BACKEND_URL}/dish`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
@@ -475,7 +476,7 @@ beforeEach(() => {
     });
   }).as("deleteDish");
 
-  cy.intercept("PUT", "http://localhost:8000/dish", (req) => {
+  cy.intercept("PUT", `${BACKEND_URL}/dish`, (req) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
     expect(body).to.deep.equal({
